@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script>document.documentElement.classList.add('js')</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кутерьма — Городское медиа</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/unbounded@5.1.1/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/manrope@5.1.1/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.0.8/index.min.css">
+<style>
+/* ===== TOKENS ===== */
+:root {
+  --paper:   #F7F4EE;
+  --paper-2: #EDE9DE;
+  --paper-3: #E2DECE;
+  --ink:     #16140F;
+  --ink-2:   #47422F;
+  --ink-3:   #635D4C;
+  --ink-4:   #C7C1AC;
+  --num-rest:#8C7F5A;
+  --brand:      #2E6B4E;
+  --brand-2:    #5CB584;
+  --brand-pale: #E9F5EE;
+  --accent:      #8A5F0C;
+  --accent-2:    #D9A43C;
+  --accent-pale: #FBF1DC;
+  --bd:      #DAD4C6;
+  --bd-2:    #EBE7DC;
+  --always-dk: #14150F;
+  --always-cr: #F2EFE5;
+  /* Footer secondary text — solid tones replacing alpha, hierarchy preserved, all >=6:1 vs always-dk */
+  --dk-txt-1: #9C9686;  /* was cream @35% (2.95:1) -> 6.22:1 */
+  --dk-txt-2: #A8A292;  /* was cream @45% (4.08:1) -> 7.21:1 */
+  --dk-txt-3: #BFB9A8;  /* was cream @55% (5.51:1, already ok) -> 9.37:1, kept for full consistency */
+  --c-gorod:    #2E4152;
+  --c-blag:     #565A22;
+  --c-nasledie: #7A4420;
+  --c-kult:     #5C1A45;
+  --c-obsh:     #3D2E5C;
+  --c-eco:      #1C5556;
+  --c-sport:    #7A1F28;
+  --t-micro: 10px;
+  --t-xs:    11px;
+  --t-sm:    13px;
+  --t-md:    16px;
+  --t-lg:    20px;
+  --t-xl:    24px;
+  --t-2xl:   30px;
+  --sh-sm: 0 1px 3px rgba(20,16,12,.05), 0 4px 14px rgba(20,16,12,.05);
+  --sh-md: 0 10px 28px rgba(20,16,12,.09);
+  --sh-lg: 0 20px 48px rgba(20,16,12,.12);
+  --fd: 'Unbounded',-apple-system,sans-serif;
+  --fg: 'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
+  --fs: 'PT Serif',Georgia,serif;
+  --max: 1240px;
+}
+/* ===== RESET ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--fg);color:var(--ink);line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  background:linear-gradient(180deg,#FAF8F3 0%,#F5F2E9 45%,#EFF2EA 100%);
+  background-attachment:fixed}
+img{max-width:100%;height:auto;display:block;object-fit:cover}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+ul{list-style:none}
+input{font:inherit;border:none;background:none}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+h1,h2,h3{font-weight:inherit;font-size:inherit;line-height:inherit;letter-spacing:inherit;
+  font-family:inherit;color:inherit}
+
+/* ===== FOCUS — one system, always visible, never hover-dependent ===== */
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:2px}
+.icon-btn:focus-visible,.foot-soc-big:focus-visible,.scroll-top:focus-visible,
+.hc-arrow:focus-visible,.hc-dot:focus-visible,.srch-x:focus-visible,.mob-close:focus-visible{outline-offset:2px;border-radius:50%}
+.nav-pill:focus-visible,.filter:focus-visible,.tag:focus-visible,
+.foot-cta-btn:focus-visible,.load-more:focus-visible,.feed-empty-btn:focus-visible{border-radius:999px}
+input:focus-visible{outline:2px solid var(--brand);outline-offset:1px;border-radius:4px}
+
+/* ===== UTILS ===== */
+.wrap{max-width:var(--max);margin:0 auto;padding:0 22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+/* ===== PLACEHOLDER IMAGE ===== */
+.ph-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  background-color:var(--paper-3);
+  background-image:repeating-linear-gradient(135deg, rgba(22,20,15,.025) 0px, rgba(22,20,15,.025) 8px, transparent 8px, transparent 16px);
+  color:var(--ink-4)}
+.ph-img svg{width:30px;height:30px;flex-shrink:0}
+.hc-slide .ph-img{position:absolute;inset:0}
+.hc-slide .ph-img svg{width:54px;height:54px}
+.cc-img .ph-img svg{width:38px;height:38px}
+/* ===== ANIMATIONS ===== */
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.55}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.rev{opacity:0;transform:translateY(16px);
+  transition:opacity .5s ease,transform .5s cubic-bezier(.16,1,.3,1)}
+.rev.on{opacity:1;transform:none}
+
+/* ===== IDENTITY STRIPE ===== */
+.id-stripe{height:3px;background:var(--brand);width:100%}
+
+/* ===== HEADER ===== */
+.site-hdr{background:rgba(250,248,243,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:1000;transition:box-shadow .2s}
+.site-hdr.scrolled{box-shadow:var(--sh-sm)}
+.hdr-row{display:flex;align-items:center;gap:22px;padding:13px 0}
+.masthead{flex-shrink:0;display:flex;align-items:center}
+.masthead-logo{font-family:var(--fd);font-size:var(--t-xl);font-weight:700;
+  letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:8px}
+.masthead-dot{width:8px;height:8px;background:var(--brand);border-radius:50%;
+  display:inline-block;animation:pulse 2.2s infinite}
+/* nav list: edge fade signals horizontal overflow without teaching the user anything */
+.nav-list{flex:1;min-width:0;display:flex;align-items:center;gap:3px;
+  overflow-x:auto;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%)}
+.nav-list::-webkit-scrollbar{display:none}
+.nav-pill{font-family:var(--fd);font-size:var(--t-xs);font-weight:500;letter-spacing:.02em;
+  text-transform:uppercase;padding:7px 14px;border-radius:999px;color:var(--ink-3);
+  white-space:nowrap;transition:background .15s,color .15s;flex-shrink:0}
+.nav-pill:hover{color:var(--ink);background:var(--paper-2)}
+.nav-pill:active{background:var(--paper-3)}
+.nav-pill.active{background:var(--ink);color:var(--paper)}
+.hdr-actions{flex-shrink:0;display:flex;align-items:center;gap:4px}
+/* icon buttons: hit-area brought to a consistent, comfortable 42px across the whole site */
+.icon-btn{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;color:var(--ink-2);transition:background .15s,color .15s,transform .12s;flex-shrink:0}
+.icon-btn:hover{background:var(--paper-2);color:var(--ink)}
+.icon-btn:active{background:var(--paper-3);transform:scale(.92)}
+.icon-btn svg{width:18px;height:18px}
+.burger{display:none}
+.mob-srch{display:none;padding:0 0 13px}
+.mob-srch-inner{display:flex;align-items:center;gap:9px;background:var(--paper-2);
+  border-radius:20px;padding:0 15px;height:38px}
+.mob-srch-inner svg{width:15px;height:15px;color:var(--ink-3);flex-shrink:0}
+.mob-srch-inner input{flex:1;font-size:14px;color:var(--ink);font-family:var(--fg)}
+.mob-srch-inner input::placeholder{color:var(--ink-3)}
+@media(max-width:768px){
+  .burger{display:flex}
+  .nav-list{display:none}
+  .icon-btn.search-btn{display:none}
+  .mob-srch{display:block}
+}
+
+/* ===== SEARCH OVERLAY ===== */
+.srch-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;
+  display:none;align-items:flex-start;padding-top:70px;justify-content:center}
+.srch-overlay.open{display:flex}
+.srch-box{width:100%;max-width:560px;margin:0 20px;background:var(--paper);
+  border:1px solid var(--bd);border-radius:8px;overflow:hidden;box-shadow:var(--sh-lg)}
+.srch-inner{display:flex;align-items:center;padding:0 18px;height:52px}
+.srch-inner input{flex:1;font-size:17px;color:var(--ink);font-family:var(--fg)}
+.srch-inner input::placeholder{color:var(--ink-3)}
+.srch-x{width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+  color:var(--ink-3);border-radius:50%;transition:color .15s,background .15s}
+.srch-x:hover{color:var(--ink);background:var(--paper-2)}
+.srch-x:active{background:var(--paper-3)}
+.srch-x svg{width:18px;height:18px;stroke:currentColor;stroke-width:2}
+
+/* ===== HERO CAROUSEL ===== */
+.carousel-section{padding:34px 0 46px}
+.hero-carousel{position:relative;border-radius:14px;overflow:hidden;
+  min-height:440px;box-shadow:var(--sh-lg)}
+.hc-track{display:flex;height:440px;transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.hc-slide{position:relative;flex:0 0 100%;height:100%;cursor:pointer}
+.hc-slide::after{content:'';position:absolute;inset:0;z-index:1;
+  background:linear-gradient(to top,rgba(20,16,12,.94) 0%,rgba(20,16,12,.56) 40%,rgba(20,16,12,.05) 70%,transparent 100%)}
+.hc-content{position:absolute;left:0;right:0;bottom:0;padding:40px 40px 34px;z-index:2}
+.hc-title{font-family:var(--fd);font-size:var(--t-2xl);font-weight:600;line-height:1.2;
+  letter-spacing:.001em;color:var(--always-cr);max-width:640px}
+.hc-meta{margin-top:14px;font-family:var(--fd);font-size:var(--t-xs);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--dk-txt-2)}
+.hc-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;
+  border-radius:50%;background:rgba(20,16,12,.36);backdrop-filter:blur(6px);color:#fff;
+  display:flex;align-items:center;justify-content:center;z-index:3;transition:background .18s,transform .15s}
+.hc-arrow:hover{background:rgba(20,16,12,.6)}
+.hc-arrow:active{transform:translateY(-50%) scale(.88)}
+.hc-arrow svg{width:19px;height:19px;stroke:currentColor;stroke-width:2.3}
+.hc-arrow.prev{left:18px}
+.hc-arrow.next{right:18px}
+.hc-dots{position:absolute;right:26px;bottom:20px;display:flex;align-items:center;z-index:3}
+.hc-dot{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;
+  background:transparent;border-radius:50%;cursor:pointer}
+.hc-dot::after{content:'';width:7px;height:7px;border-radius:50%;background:rgba(242,237,229,.4);
+  transition:all .25s}
+.hc-dot:active::after{transform:scale(1.25)}
+.hc-dot.active::after{width:20px;border-radius:4px;background:var(--brand-2)}
+@media(max-width:768px){
+  .carousel-section{padding:20px 0 32px}
+  .hero-carousel,.hc-track{height:360px;min-height:360px}
+  .hc-content{padding:26px 24px 24px}
+  .hc-title{font-size:1.4rem}
+  .hc-arrow{width:36px;height:36px}
+  .hc-arrow svg{width:16px;height:16px}
+  .hc-dots{right:14px;bottom:8px}
+}
+@media(max-width:480px){
+  .hero-carousel,.hc-track{height:320px;min-height:320px}
+  .hero-carousel{border-radius:10px}
+  .hc-title{font-size:1.15rem}
+  .hc-content{padding:20px 18px 20px}
+}
+
+/* ===== SEC-DIV (now real <h2> headings) ===== */
+.sec-div{display:flex;align-items:center;gap:13px;margin:40px 0 22px}
+
+/* ===== ARTICLE BODY (for future article-detail screens) =====
+   PT Serif is imported for exactly this: long-form reading copy.
+   Everywhere else in this template it only appears at 700 for card
+   headlines — this is the rule that actually cashes in the font
+   choice for what it's for, ready the moment an article page exists. */
+.article-body{font-family:var(--fs);font-weight:400;font-size:17px;
+  line-height:1.75;color:var(--ink-2)}
+.article-body p{margin-bottom:1.3em}
+.article-body p:last-child{margin-bottom:0}
+.article-body strong{font-weight:700}
+.article-body em{font-style:italic}
+.sec-div-acc{width:3px;height:18px;background:var(--brand);flex-shrink:0}
+.sec-div-title{font-family:var(--fd);font-size:var(--t-xs);font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.sec-div-line{flex:1;height:1px;background:var(--bd)}
+.sec-div-link{font-family:var(--fd);font-size:var(--t-xs);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--brand);white-space:nowrap;
+  display:flex;align-items:center;gap:4px;transition:opacity .15s}
+.sec-div-link:hover{opacity:.65}
+.sec-div-link:active{opacity:.45}
+.sec-div-link svg{width:13px;height:13px}
+
+/* ===== MAIN LAYOUT ===== */
+.main-layout{display:grid;grid-template-columns:1fr 292px;gap:44px;padding-bottom:60px;align-items:start}
+
+/* ===== FEED FILTERS ===== */
+.filters{display:flex;gap:5px;margin-bottom:18px;overflow-x:auto;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%)}
+.filters::-webkit-scrollbar{display:none}
+.filter{font-family:var(--fd);font-size:var(--t-xs);font-weight:600;letter-spacing:.03em;
+  text-transform:uppercase;padding:6px 14px;border-radius:2px;
+  background:var(--paper-2);color:var(--ink-3);white-space:nowrap;
+  transition:background .15s,color .15s;flex-shrink:0}
+.filter:hover{background:var(--paper-3);color:var(--ink)}
+.filter:active{background:var(--paper-3)}
+.filter.active{background:var(--ink);color:#fff}
+.filter.active[data-filter="city"]{background:var(--c-city)}
+.filter.active[data-filter="improvement"]{background:var(--c-improvement)}
+.filter.active[data-filter="heritage"]{background:var(--c-heritage)}
+.filter.active[data-filter="culture"]{background:var(--c-culture)}
+.filter.active[data-filter="society"]{background:var(--c-society)}
+.filter.active[data-filter="ecology"]{background:var(--c-ecology)}
+.filter.active[data-filter="sport"]{background:var(--c-sport)}
+
+.feed-empty{display:none;flex-direction:column;align-items:center;gap:14px;
+  padding:52px 20px;text-align:center;border:1px dashed var(--bd);border-radius:8px;margin-bottom:6px}
+.feed-empty-text{font-size:var(--t-sm);color:var(--ink-3);max-width:320px}
+.feed-empty-btn{font-family:var(--fd);font-size:var(--t-xs);font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;padding:10px 20px;background:var(--brand);color:#fff;
+  border-radius:999px;transition:opacity .15s,transform .12s}
+.feed-empty-btn:hover{opacity:.85}
+.feed-empty-btn:active{transform:scale(.96)}
+
+/* ===== NEWS CARDS — now share the same paper/paper-2 surface language as cc-card & spec-card ===== */
+.news-list{display:flex;flex-direction:column}
+/* ============================================================
+   CARD ARCHITECTURE — three deliberate formats, not drift.
+   Shared thread across all three: var(--paper) surface tone,
+   8px radius wherever a corner exists, only two hover idioms
+   sitewide (fill vs lift — see hover_states note at top of file
+   conceptually: rows/cells fill, gapped cards lift).
+
+   1. FEED ROW (.news-card) — chronological, many items.
+      No shadow (would get heavy repeated down a long list).
+      Hover = fill. Horizontal layout. border-bottom rhythm.
+   2. FEATURE CARD (.cc-card) — curated, only 3.
+      Persistent soft shadow at rest + lift-and-shadow on hover —
+      earns the "special pick" feel a plain list doesn't need.
+      Vertical layout, gaps instead of separator lines.
+   3. REFERENCE CELL (.spec-card, inside .specials) — fixed small
+      set read as ONE panel, not N floating cards. No individual
+      radius/shadow — the outer panel carries both once. Hover =
+      fill, same idiom as the feed row, since both are flat formats.
+   ============================================================ */
+.news-card{display:grid;grid-template-columns:240px 1fr;gap:20px;
+  background:var(--paper);
+  margin:0 -14px;padding:18px 14px;border-radius:8px;
+  border-bottom:1px solid var(--bd-2);cursor:pointer;transition:background .15s}
+.news-card:first-child{border-top:1px solid var(--bd-2)}
+.news-card:hover{background:var(--paper-2)}
+.news-card:active{background:var(--paper-3)}
+.nc-img{overflow:hidden;aspect-ratio:3/2;flex-shrink:0;border-radius:4px}
+.nc-body{display:flex;flex-direction:column;padding:2px 0;min-width:0}
+.nc-title{font-family:var(--fs);font-size:var(--t-md);font-weight:700;
+  line-height:1.33;color:var(--ink);margin-bottom:6px;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nc-excerpt{font-size:var(--t-sm);color:var(--ink-3);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  margin-bottom:10px}
+.nc-meta{font-size:var(--t-xs);color:var(--ink-3);font-weight:600;letter-spacing:.01em;margin-top:auto}
+
+.news-card.featured{grid-template-columns:1fr;gap:0}
+.news-card.featured .nc-img{aspect-ratio:21/10;border-radius:8px;margin-bottom:18px;box-shadow:var(--sh-sm)}
+.news-card.featured .nc-title{font-size:var(--t-lg);line-height:1.32;-webkit-line-clamp:2;margin-bottom:9px}
+.news-card.featured .nc-excerpt{font-size:14px;-webkit-line-clamp:2;max-width:640px}
+
+.load-more{display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:12px;margin-top:6px;border:1px solid var(--bd);border-radius:2px;
+  font-family:var(--fd);font-size:var(--t-xs);font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-2);transition:background .15s,color .15s,transform .12s}
+.load-more:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.load-more:active{transform:scale(.98)}
+
+/* ===== CULTURE LAYER ===== */
+.culture-section{background:var(--brand-pale);padding:46px 0;margin-top:8px}
+.culture-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.cc-card{background:var(--paper);border-radius:8px;overflow:hidden;cursor:pointer;
+  box-shadow:var(--sh-sm);
+  transition:transform .2s,box-shadow .2s}
+.cc-card:hover{transform:translateY(-4px);box-shadow:var(--sh-md)}
+.cc-card:active{transform:translateY(-1px) scale(.99)}
+.cc-img{aspect-ratio:4/3;overflow:hidden}
+.cc-body{padding:18px 18px 20px}
+.cc-title{font-family:var(--fs);font-size:var(--t-md);font-weight:700;line-height:1.32;
+  color:var(--ink);margin-bottom:8px;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cc-excerpt{font-size:var(--t-sm);color:var(--ink-3);line-height:1.5;margin-bottom:10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cc-meta{font-size:var(--t-xs);color:var(--ink-3);font-weight:600}
+@media(max-width:1024px){.culture-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.culture-grid{grid-template-columns:1fr}.culture-section{padding:34px 0}}
+
+/* ===== SPECIALS ===== */
+.specials{display:grid;grid-template-columns:1fr 1fr;gap:1px;
+  background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden;box-shadow:var(--sh-sm)}
+.spec-card{background:var(--paper);padding:28px 24px;cursor:pointer;transition:background .15s}
+.spec-card:hover{background:var(--paper-2)}
+.spec-card:active{background:var(--paper-3)}
+.spec-acc{width:26px;height:3px;background:var(--accent);margin-bottom:11px}
+.spec-lbl{font-family:var(--fd);font-size:var(--t-micro);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.spec-title{font-family:var(--fs);font-size:var(--t-lg);font-weight:700;
+  line-height:1.42;color:var(--ink);margin-bottom:10px}
+.spec-desc{font-size:var(--t-sm);color:var(--ink-3);line-height:1.6}
+
+/* ===== SIDEBAR ===== */
+.sidebar{display:flex;flex-direction:column;gap:30px;position:sticky;top:90px}
+.sb-title{font-family:var(--fd);font-size:var(--t-xs);font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);
+  padding-bottom:10px;border-bottom:2px solid var(--ink);margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between}
+
+.top-list{display:flex;flex-direction:column}
+.top-item{display:flex;align-items:center;gap:13px;margin:0 -10px;padding:13px 10px;
+  border-radius:6px;border-bottom:1px solid var(--bd-2);cursor:pointer;transition:background .15s}
+.top-item:last-child{border-bottom:none}
+.top-item:hover{background:var(--paper-2)}
+.top-item:active{background:var(--paper-3)}
+.top-item:first-child{margin-top:0}
+.top-num{font-family:var(--fd);font-size:26px;font-weight:700;
+  color:var(--num-rest);line-height:1;min-width:32px;flex-shrink:0;transition:color .15s}
+.top-item:hover .top-num{color:var(--brand)}
+.top-title{font-family:var(--fs);font-size:var(--t-sm);font-weight:700;
+  line-height:1.33;color:var(--ink);margin-bottom:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.top-meta{font-size:var(--t-xs);color:var(--ink-3);font-weight:600}
+
+.tags-cloud{display:flex;flex-wrap:wrap;gap:6px}
+.tag{padding:5px 12px;border:1px solid var(--bd);border-radius:2px;
+  font-family:var(--fd);font-size:var(--t-xs);font-weight:600;letter-spacing:.02em;
+  text-transform:uppercase;color:var(--ink-3);transition:background .15s,color .15s;cursor:pointer}
+.tag:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.tag:active{background:var(--brand);opacity:.8}
+
+/* ===== FOOTER — secondary text now solid tones, not alpha ===== */
+.footer{background:var(--always-dk);padding:50px 0 0;overflow:hidden}
+.foot-top{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:36px;padding-bottom:38px;border-bottom:1px solid rgba(255,255,255,.08);
+  flex-wrap:wrap}
+.foot-brand{max-width:280px;flex:1;min-width:220px}
+.foot-brand-name{font-family:var(--fd);font-size:var(--t-xl);font-weight:700;
+  letter-spacing:-.01em;color:var(--always-cr);margin-bottom:10px}
+.foot-about{font-size:var(--t-sm);color:var(--dk-txt-2);line-height:1.6}
+.foot-cta-btn{display:inline-flex;align-items:center;margin-top:16px;padding:10px 22px;
+  background:var(--brand);color:#fff;border-radius:999px;
+  font-family:var(--fd);font-size:var(--t-xs);font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;transition:opacity .15s,transform .12s}
+.foot-cta-btn:hover{opacity:.85}
+.foot-cta-btn:active{transform:scale(.95)}
+.foot-contact{flex:1;min-width:200px}
+.foot-col-title{font-family:var(--fd);font-size:var(--t-xs);font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2);margin-bottom:13px}
+.foot-links{display:flex;flex-direction:column;gap:9px}
+.foot-link{font-size:var(--t-sm);color:var(--dk-txt-3);transition:color .15s;cursor:pointer}
+.foot-link:hover{color:var(--always-cr)}
+.foot-link:active{opacity:.7}
+.foot-email{color:var(--brand-2);font-weight:600}
+.foot-email:hover{color:var(--accent-2)}
+.foot-socs-big{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.foot-soc-big{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;color:var(--always-cr);border:1.5px solid rgba(255,255,255,.18);
+  transition:background .18s,border-color .18s,color .18s,transform .15s;flex-shrink:0}
+.foot-soc-big:hover{background:var(--brand-2);border-color:var(--brand-2);color:var(--always-dk);
+  transform:translateY(-2px)}
+.foot-soc-big:active{transform:translateY(-1px) scale(.94)}
+.foot-soc-big svg{width:24px;height:24px}
+
+.foot-marquee-wrap{overflow:hidden;padding:26px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.foot-marquee{display:flex;white-space:nowrap;animation:marquee 22s linear infinite}
+.foot-marquee span{font-family:var(--fd);font-size:44px;font-weight:700;
+  letter-spacing:-.01em;text-transform:uppercase;color:var(--brand-2);
+  padding:0 28px;flex-shrink:0}
+.foot-marquee span::after{content:'•';margin-left:28px;color:var(--accent-2)}
+
+.footer-bot{display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:var(--dk-txt-1);gap:14px;flex-wrap:wrap;padding:22px 0}
+
+@media(max-width:768px){
+  .foot-marquee span{font-size:30px}
+}
+@media(max-width:480px){
+  .foot-socs-big{gap:8px}
+  .foot-soc-big{width:46px;height:46px}
+  .foot-soc-big svg{width:20px;height:20px}
+}
+
+/* ===== MOBILE MENU ===== */
+.mob-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1500;
+  opacity:0;pointer-events:none;transition:opacity .25s}
+.mob-overlay.open{opacity:1;pointer-events:all}
+.mob-menu{position:fixed;top:0;left:0;bottom:0;width:272px;background:var(--paper);
+  z-index:1600;transform:translateX(-100%);
+  transition:transform .3s cubic-bezier(.16,1,.3,1);overflow-y:auto;padding:22px;box-shadow:var(--sh-lg)}
+.mob-menu.open{transform:translateX(0)}
+.mob-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:22px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
+.mob-close{width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;color:var(--ink-2);transition:background .15s}
+.mob-close:hover{background:var(--paper-2)}
+.mob-close:active{background:var(--paper-3)}
+.mob-close svg{width:19px;height:19px;stroke:var(--ink);stroke-width:2}
+.mob-nav{display:flex;flex-direction:column}
+.mob-nav-item{padding:12px 7px;font-family:var(--fd);font-size:13px;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);
+  border-bottom:1px solid var(--bd-2);transition:color .15s,background .15s,padding-left .15s}
+.mob-nav-item:hover{color:var(--ink);padding-left:12px}
+.mob-nav-item:active{background:var(--paper-2)}
+.mob-nav-item.active{color:var(--brand)}
+
+/* ===== SCROLL TOP ===== */
+.scroll-top{position:fixed;bottom:22px;right:22px;width:44px;height:44px;
+  background:var(--ink);color:var(--paper);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;z-index:900;
+  opacity:0;visibility:hidden;transform:translateY(8px);
+  transition:opacity .2s,visibility .2s,transform .2s,background .15s;box-shadow:var(--sh-md)}
+.scroll-top.vis{opacity:1;visibility:visible;transform:none}
+.scroll-top:hover{background:var(--brand)}
+.scroll-top:active{transform:scale(.9)}
+.scroll-top svg{width:19px;height:19px;stroke:currentColor;stroke-width:2.5;
+  stroke-linecap:round;stroke-linejoin:round}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1024px){
+  .main-layout{grid-template-columns:1fr;gap:0}
+  .sidebar{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:40px;position:static}
+}
+@media(max-width:768px){
+  .news-card{grid-template-columns:150px 1fr;gap:14px;margin:0 -8px;padding:16px 8px}
+  .news-card.featured{grid-template-columns:1fr}
+  .sidebar{grid-template-columns:1fr}
+  .specials{grid-template-columns:1fr}
+  .foot-socs-big{align-self:flex-start}
+}
+@media(max-width:480px){
+  .news-card{grid-template-columns:1fr}
+  .nc-img{aspect-ratio:16/9}
+  .news-card.featured .nc-img{aspect-ratio:16/10}
+}
+</style>
+</head>
+<body>
+
+<div class="id-stripe"></div>
+
+<!-- HEADER -->
+<header class="site-hdr" id="header">
+  <div class="wrap">
+    <div class="hdr-row">
+      <a href="#" class="masthead">
+        <h1 class="masthead-logo">Кутерьма<span class="masthead-dot"></span></h1>
+      </a>
+
+      <nav class="nav-list">
+        <a href="index.html" class="nav-pill active">Главная</a>
+        <a href="feed.html" class="nav-pill">Лента</a>
+        <a href="city.html" class="nav-pill">Город</a>
+        <a href="culture.html" class="nav-pill">Культура</a>
+        <a href="people.html" class="nav-pill">Люди</a>
+        <a href="history.html" class="nav-pill">История</a>
+        <a href="gastroguide.html" class="nav-pill">Гастрогид</a>
+        <a href="events.html" class="nav-pill">События</a>
+      </nav>
+
+      <div class="hdr-actions">
+        <button class="icon-btn search-btn" id="searchOpenBtn" aria-label="Поиск">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="icon-btn burger" id="burgerBtn" aria-label="Меню">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="mob-srch">
+      <div class="mob-srch-inner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Поиск…">
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO CAROUSEL -->
+<section class="carousel-section rev" aria-label="Главные материалы">
+  <div class="wrap">
+    <div class="hero-carousel" id="heroCarousel">
+      <div class="hc-track" id="hcTrack">
+
+        <div class="hc-slide">
+          <div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div>
+          <div class="hc-content">
+            <span class="sr-only">Город</span>
+            <h2 class="hc-title">Заголовок центрального материала дня, который отражает главное событие в жизни города</h2>
+            <div class="hc-meta">Сегодня</div>
+          </div>
+        </div>
+
+        <div class="hc-slide">
+          <div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div>
+          <div class="hc-content">
+            <span class="sr-only">Благоустройство</span>
+            <h2 class="hc-title">Заголовок материала о новом проекте благоустройства городского пространства</h2>
+            <div class="hc-meta">Сегодня</div>
+          </div>
+        </div>
+
+        <div class="hc-slide">
+          <div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div>
+          <div class="hc-content">
+            <span class="sr-only">Наследие</span>
+            <h2 class="hc-title">Заголовок материала об одном из памятников исторического наследия города</h2>
+            <div class="hc-meta">Вчера</div>
+          </div>
+        </div>
+
+        <div class="hc-slide">
+          <div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div>
+          <div class="hc-content">
+            <span class="sr-only">Культура</span>
+            <h2 class="hc-title">Заголовок материала о культурном событии, которое обсуждает весь город</h2>
+            <div class="hc-meta">Вчера</div>
+          </div>
+        </div>
+
+        <div class="hc-slide">
+          <div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div>
+          <div class="hc-content">
+            <span class="sr-only">Общество</span>
+            <h2 class="hc-title">Заголовок материала о жизни местного сообщества и городских инициативах</h2>
+            <div class="hc-meta">Вчера</div>
+          </div>
+        </div>
+
+        <div class="hc-slide">
+          <div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div>
+          <div class="hc-content">
+            <span class="sr-only">Спорт</span>
+            <h2 class="hc-title">Заголовок материала о результатах и достижениях местной спортивной команды</h2>
+            <div class="hc-meta">Вчера</div>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="hc-arrow prev" id="hcPrev" aria-label="Предыдущий слайд">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="hc-arrow next" id="hcNext" aria-label="Следующий слайд">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="hc-dots" id="hcDots"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN LAYOUT -->
+<div class="wrap">
+  <div class="main-layout">
+
+    <main>
+      <!-- ЛЕНТА СЕГОДНЯ -->
+      <div class="sec-div rev">
+        <div class="sec-div-acc"></div>
+        <h2 class="sec-div-title">Лента сегодня</h2>
+        <div class="sec-div-line"></div>
+        <a href="feed.html" class="sec-div-link">Все <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+      </div>
+
+      <div class="filters">
+        <button class="filter active" data-filter="all">Все</button>
+        <button class="filter" data-filter="city">Город</button>
+        <button class="filter" data-filter="improvement">Благоустройство</button>
+        <button class="filter" data-filter="heritage">Наследие</button>
+        <button class="filter" data-filter="culture">Культура</button>
+        <button class="filter" data-filter="society">Общество</button>
+        <button class="filter" data-filter="ecology">Экология</button>
+        <button class="filter" data-filter="sport">Спорт</button>
+      </div>
+
+      <div class="news-list" id="newsList">
+        <article class="news-card featured" data-category="city">
+          <div class="nc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+          <div class="nc-body">
+            <span class="sr-only">Город</span>
+            <h3 class="nc-title">В центре города планируют обновить общественное пространство</h3>
+            <p class="nc-excerpt">Материал о планах городских властей и о том, как изменится привычный маршрут жителей — с комментариями архитекторов и первой реакцией местных жителей.</p>
+            <div class="nc-meta">14:20</div>
+          </div>
+        </article>
+        <article class="news-card" data-category="improvement">
+          <div class="nc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+          <div class="nc-body">
+            <span class="sr-only">Благоустройство</span>
+            <h3 class="nc-title">Во дворах начнётся плановая замена освещения и покрытия</h3>
+            <p class="nc-excerpt">Работы затронут несколько районов города и будут проводиться поэтапно в течение сезона.</p>
+            <div class="nc-meta">12:45</div>
+          </div>
+        </article>
+        <article class="news-card" data-category="heritage">
+          <div class="nc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+          <div class="nc-body">
+            <span class="sr-only">Наследие</span>
+            <h3 class="nc-title">Реставраторы приступили к работам на одном из исторических зданий</h3>
+            <p class="nc-excerpt">Специалисты рассказали, что удалось обнаружить при обследовании фасада и какие сроки называют для завершения.</p>
+            <div class="nc-meta">11:30</div>
+          </div>
+        </article>
+        <article class="news-card" data-category="culture">
+          <div class="nc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+          <div class="nc-body">
+            <span class="sr-only">Культура</span>
+            <h3 class="nc-title">Городская площадка анонсировала программу мероприятий на ближайший месяц</h3>
+            <p class="nc-excerpt">В афише — выставки, встречи и события для разных аудиторий, часть из них бесплатна для посещения.</p>
+            <div class="nc-meta">10:15</div>
+          </div>
+        </article>
+        <article class="news-card" data-category="society">
+          <div class="nc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+          <div class="nc-body">
+            <span class="sr-only">Общество</span>
+            <h3 class="nc-title">Жители обсуждают инициативу по развитию районных сообществ</h3>
+            <p class="nc-excerpt">Идею представили на встрече с местными активистами, отклики пока неоднозначные.</p>
+            <div class="nc-meta">09:40</div>
+          </div>
+        </article>
+        <article class="news-card" data-category="ecology">
+          <div class="nc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+          <div class="nc-body">
+            <span class="sr-only">Экология</span>
+            <h3 class="nc-title">Специалисты рассказали о состоянии городских водоёмов в этом сезоне</h3>
+            <p class="nc-excerpt">Мониторинг проводится регулярно, а результаты используют для дальнейшего планирования работ.</p>
+            <div class="nc-meta">09:05</div>
+          </div>
+        </article>
+        <article class="news-card" data-category="sport">
+          <div class="nc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+          <div class="nc-body">
+            <span class="sr-only">Спорт</span>
+            <h3 class="nc-title">Местная команда провела очередной матч сезона</h3>
+            <p class="nc-excerpt">Подробности встречи и реакция тренерского штаба — в материале редакции.</p>
+            <div class="nc-meta">08:30</div>
+          </div>
+        </article>
+      </div>
+
+      <div class="feed-empty" id="feedEmpty">
+        <p class="feed-empty-text">Пока нет материалов в этой рубрике — но лента постоянно пополняется.</p>
+        <button class="feed-empty-btn" id="feedEmptyReset">Показать всю ленту</button>
+      </div>
+
+      <button class="load-more" id="loadMoreBtn">
+        Показать ещё
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </main>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <h2 class="sb-title">Читают сейчас</h2>
+        <div class="top-list">
+          <div class="top-item"><div class="top-num">01</div><div><div class="top-title">Заголовок самого читаемого материала недели</div><div class="top-meta"><span class="sr-only">Город · </span>Сегодня</div></div></div>
+          <div class="top-item"><div class="top-num">02</div><div><div class="top-title">Заголовок второго по популярности материала</div><div class="top-meta"><span class="sr-only">Спорт · </span>Сегодня</div></div></div>
+          <div class="top-item"><div class="top-num">03</div><div><div class="top-title">Заголовок материала о благоустройстве района</div><div class="top-meta"><span class="sr-only">Благоустройство · </span>Вчера</div></div></div>
+          <div class="top-item"><div class="top-num">04</div><div><div class="top-title">Заголовок материала о культурном событии</div><div class="top-meta"><span class="sr-only">Культура · </span>Вчера</div></div></div>
+          <div class="top-item"><div class="top-num">05</div><div><div class="top-title">Заголовок материала об общественной инициативе</div><div class="top-meta"><span class="sr-only">Общество · </span>Вчера</div></div></div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="sb-title">Темы</h2>
+        <div class="tags-cloud">
+          <span class="tag">Город</span>
+          <span class="tag">Транспорт</span>
+          <span class="tag">ЖКХ</span>
+          <span class="tag">Экология</span>
+          <span class="tag">Парки</span>
+          <span class="tag">Благоустройство</span>
+          <span class="tag">Наследие</span>
+          <span class="tag">Спорт</span>
+          <span class="tag">Общество</span>
+          <span class="tag">Культура</span>
+          <span class="tag">Образование</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- КУЛЬТУРНЫЙ СЛОЙ -->
+<section class="culture-section rev">
+  <div class="wrap">
+    <div class="sec-div" style="margin-top:0">
+      <div class="sec-div-acc" style="background:var(--accent)"></div>
+      <h2 class="sec-div-title">Культурный слой</h2>
+      <div class="sec-div-line" style="background:rgba(46,107,78,.18)"></div>
+      <a href="#" class="sec-div-link" style="color:var(--accent)">Все <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+    </div>
+    <div class="culture-grid">
+      <article class="cc-card">
+        <div class="cc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+        <div class="cc-body">
+          <span class="sr-only">Культура</span>
+          <h3 class="cc-title">Заголовок материала о новом культурном пространстве города</h3>
+          <p class="cc-excerpt">Краткое описание того, что открылось и почему это может быть интересно жителям.</p>
+          <div class="cc-meta">Сегодня</div>
+        </div>
+      </article>
+      <article class="cc-card">
+        <div class="cc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+        <div class="cc-body">
+          <span class="sr-only">Культура</span>
+          <h3 class="cc-title">Заголовок материала о значимом культурном событии</h3>
+          <p class="cc-excerpt">Материал рассказывает о том, как прошло мероприятие и что говорят его участники.</p>
+          <div class="cc-meta">Вчера</div>
+        </div>
+      </article>
+      <article class="cc-card">
+        <div class="cc-img"><div class="ph-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg></div></div>
+        <div class="cc-body">
+          <span class="sr-only">Культура</span>
+          <h3 class="cc-title">Заголовок материала о культурной инициативе местного сообщества</h3>
+          <p class="cc-excerpt">Речь о проекте, который объединил жителей города вокруг общей идеи.</p>
+          <div class="cc-meta">Вчера</div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ЛОНГРИДЫ -->
+<div class="wrap">
+  <div class="sec-div rev">
+    <div class="sec-div-acc" style="background:var(--accent)"></div>
+    <h2 class="sec-div-title">Лонгриды и спецпроекты</h2>
+    <div class="sec-div-line"></div>
+    <a href="#" class="sec-div-link" style="color:var(--accent)">Все <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+  </div>
+  <div class="specials rev" style="margin-bottom:60px">
+    <div class="spec-card">
+      <div class="spec-acc"></div>
+      <div class="sr-only">Наследие</div>
+      <h3 class="spec-title">Заголовок лонгрида об истории города</h3>
+      <p class="spec-desc">Материал о том, как менялся город на протяжении десятилетий.</p>
+    </div>
+    <div class="spec-card">
+      <div class="spec-acc"></div>
+      <div class="sr-only">Репортаж</div>
+      <h3 class="spec-title">Заголовок репортажа с места событий</h3>
+      <p class="spec-desc">Корреспондент редакции побывал на месте и рассказывает, что там происходит.</p>
+    </div>
+    <div class="spec-card">
+      <div class="spec-acc"></div>
+      <div class="sr-only">Спецпроект</div>
+      <h3 class="spec-title">Заголовок спецпроекта редакции</h3>
+      <p class="spec-desc">Большой материал, который редакция готовила несколько месяцев.</p>
+    </div>
+    <div class="spec-card">
+      <div class="spec-acc"></div>
+      <div class="sr-only">Экология</div>
+      <h3 class="spec-title">Заголовок материала об экологии региона</h3>
+      <p class="spec-desc">Наблюдения и выводы за длительный период, собранные редакцией.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="foot-brand-name">Кутерьма</div>
+        <p class="foot-about">Независимое городское издание о Ярославле. С 2026 года.</p>
+        <a href="about.html" class="foot-cta-btn">О редакции</a>
+      </div>
+
+      <div class="foot-contact">
+        <div class="foot-col-title">Связь</div>
+        <div class="foot-links">
+          <a href="advertising.html" class="foot-link">Реклама и партнёрства</a>
+          <a class="foot-link">Поддержать редакцию</a>
+          <a href="mailto:quterma@yandex.ru" class="foot-link foot-email">quterma@yandex.ru</a>
+        </div>
+      </div>
+
+      <div class="foot-socs-big">
+        <a href="https://t.me/kuterma" class="foot-soc-big" aria-label="Telegram">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.869 4.326-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.829.941z"/></svg>
+        </a>
+        <a href="https://vk.com/kuterma" class="foot-soc-big" aria-label="ВКонтакте">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.391 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4.03 8.57 4.03 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.678.863 2.49 2.303 4.675 2.896 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.253-1.406 2.15-3.574 2.15-3.574.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/></svg>
+        </a>
+        <a href="#" class="foot-soc-big" aria-label="RSS">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot-marquee-wrap">
+    <div class="foot-marquee" id="footMarquee">
+      <span>Что происходит?</span><span>Что происходит?</span><span>Что происходит?</span><span>Что происходит?</span>
+      <span>Что происходит?</span><span>Что происходит?</span><span>Что происходит?</span><span>Что происходит?</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="footer-bot">
+      <span>© Кутерьма. 2026</span>
+      <span>Ярославль</span>
+    </div>
+  </div>
+</footer>
+
+<!-- OVERLAYS -->
+<div class="srch-overlay" id="srchOverlay">
+  <div class="srch-box">
+    <div class="srch-inner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:11px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Поиск…" id="srchInput" autocomplete="off">
+      <button class="srch-x" id="srchClose"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+</div>
+<div class="mob-overlay" id="mobOverlay"></div>
+<div class="mob-menu" id="mobMenu">
+  <div class="mob-hdr">
+    <span class="masthead-logo" style="font-size:20px">Кутерьма<span class="masthead-dot"></span></span>
+    <button class="mob-close" id="mobClose"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="mob-nav">
+    <a href="index.html" class="mob-nav-item active">Главная</a>
+    <a href="feed.html" class="mob-nav-item">Лента</a>
+    <a href="city.html" class="mob-nav-item">Город</a>
+    <a href="culture.html" class="mob-nav-item">Культура</a>
+    <a href="people.html" class="mob-nav-item">Люди</a>
+    <a href="history.html" class="mob-nav-item">История</a>
+    <a href="gastroguide.html" class="mob-nav-item">Гастрогид</a>
+    <a href="events.html" class="mob-nav-item">События</a>
+  </div>
+</div>
+<button class="scroll-top" id="scrollTopBtn" aria-label="Наверх"><svg viewBox="0 0 24 24" fill="none"><polyline points="18 15 12 9 6 15"/></svg></button>
+
+<script>
+(function(){
+'use strict';
+var PH_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.7"/><path d="M21 15l-4.5-4.5a1.5 1.5 0 0 0-2.12 0L4 21"/></svg>';
+// HEADER SCROLL
+var hdr=document.getElementById('header');
+window.addEventListener('scroll',function(){
+  hdr.classList.toggle('scrolled',window.scrollY>8);
+  document.getElementById('scrollTopBtn').classList.toggle('vis',window.scrollY>400);
+},{passive:true});
+document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+// MOBILE MENU
+var mm=document.getElementById('mobMenu'),mo=document.getElementById('mobOverlay');
+function openM(){mm.classList.add('open');mo.classList.add('open');document.body.style.overflow='hidden';}
+function closeM(){mm.classList.remove('open');mo.classList.remove('open');document.body.style.overflow='';}
+document.getElementById('burgerBtn').addEventListener('click',openM);
+document.getElementById('mobClose').addEventListener('click',closeM);
+mo.addEventListener('click',closeM);
+// SEARCH
+var so=document.getElementById('srchOverlay');
+document.getElementById('searchOpenBtn').addEventListener('click',function(){so.classList.add('open');document.getElementById('srchInput').focus();document.body.style.overflow='hidden';});
+function closeS(){so.classList.remove('open');document.body.style.overflow='';}
+document.getElementById('srchClose').addEventListener('click',closeS);
+so.addEventListener('click',function(e){if(e.target===so)closeS();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeS();closeM();}});
+// SCROLL REVEAL
+var obs=new IntersectionObserver(function(entries){
+  entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target);}});
+},{threshold:.07,rootMargin:'0px 0px -30px 0px'});
+document.querySelectorAll('.rev').forEach(function(el){obs.observe(el);});
+// HERO CAROUSEL — autoplay paced for reading, pauses on hover AND on touch
+(function(){
+  var track=document.getElementById('hcTrack');
+  if(!track)return;
+  var slides=track.children;
+  var total=slides.length;
+  var dotsWrap=document.getElementById('hcDots');
+  var idx=0,timer=null;
+  for(var i=0;i<total;i++){
+    var d=document.createElement('button');
+    d.type='button';
+    d.className='hc-dot'+(i===0?' active':'');
+    d.setAttribute('aria-label','Слайд '+(i+1));
+    d.setAttribute('data-i',i);
+    dotsWrap.appendChild(d);
+  }
+  var dots=dotsWrap.querySelectorAll('.hc-dot');
+  function go(n){
+    idx=(n+total)%total;
+    track.style.transform='translateX(-'+(idx*100)+'%)';
+    dots.forEach(function(dot,i){dot.classList.toggle('active',i===idx);});
+  }
+  function next(){go(idx+1);}
+  function prev(){go(idx-1);}
+  function start(){timer=setInterval(next,7000);}  /* slowed from 5500ms to match reading pace of a full headline */
+  function stop(){clearInterval(timer);}
+  document.getElementById('hcNext').addEventListener('click',function(){next();stop();start();});
+  document.getElementById('hcPrev').addEventListener('click',function(){prev();stop();start();});
+  dots.forEach(function(dot){dot.addEventListener('click',function(){go(parseInt(dot.getAttribute('data-i'),10));stop();start();});});
+  var wrapEl=document.getElementById('heroCarousel');
+  wrapEl.addEventListener('mouseenter',stop);
+  wrapEl.addEventListener('mouseleave',start);
+  wrapEl.addEventListener('touchstart',stop,{passive:true});  /* touch equivalent of mouse hover-pause */
+  wrapEl.addEventListener('touchend',start,{passive:true});
+  start();
+})();
+// FEED FILTERS (+ empty state)
+var filts=document.querySelectorAll('.filter');
+var cards=document.querySelectorAll('.news-card');
+var feedEmpty=document.getElementById('feedEmpty');
+function applyFilter(f){
+  filts.forEach(function(x){x.classList.toggle('active',x.getAttribute('data-filter')===f);});
+  var anyVisible=false;
+  cards.forEach(function(c){
+    var show=(f==='all'||c.getAttribute('data-category')===f);
+    c.style.display=show?'':'none';
+    if(show)anyVisible=true;
+  });
+  feedEmpty.style.display=anyVisible?'none':'flex';
+}
+filts.forEach(function(b){
+  b.addEventListener('click',function(){applyFilter(b.getAttribute('data-filter'));});
+});
+document.getElementById('feedEmptyReset').addEventListener('click',function(){applyFilter('all');});
+// LOAD MORE
+document.getElementById('loadMoreBtn').addEventListener('click',function(){
+  var btn=this;
+  btn.textContent='Загрузка…';
+  setTimeout(function(){
+    var list=document.getElementById('newsList');
+    var more=[
+      {cat:'city',pill:'Город',title:'Заголовок ещё одного материала о жизни города',time:'07:50'},
+      {cat:'sport',pill:'Спорт',title:'Заголовок материала о спортивном мероприятии',time:'07:15'},
+      {cat:'culture',pill:'Культура',title:'Заголовок материала о культурной афише недели',time:'06:40'},
+    ];
+    more.forEach(function(item){
+      var el=document.createElement('article');
+      el.className='news-card';el.setAttribute('data-category',item.cat);
+      el.style.animation='fadeUp .4s ease forwards';
+      el.innerHTML='<div class="nc-img"><div class="ph-img">'+PH_ICON+'</div></div>'
+        +'<div class="nc-body"><span class="sr-only">'+item.pill+'</span>'
+        +'<h3 class="nc-title">'+item.title+'</h3>'
+        +'<div class="nc-meta">'+item.time+'</div></div>';
+      list.appendChild(el);
+      cards=document.querySelectorAll('.news-card');
+    });
+    btn.innerHTML='Показать ещё <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  },1000);
+});
+// NAV ACTIVE
+document.querySelectorAll('.nav-pill').forEach(function(el){
+  el.addEventListener('click',function(e){e.preventDefault();
+    document.querySelectorAll('.nav-pill').forEach(function(n){n.classList.remove('active');});
+    el.classList.add('active');
+  });
+});
+// FOOTER MARQUEE — guarantee seamless loop at any viewport width, not just laptop/desktop sizes.
+// The CSS moves the track by -50%; that's only seamless if half the *current* total width
+// still exceeds the viewport (otherwise the seam becomes visible on wide/ultrawide screens).
+// So: measure one real rendered span, compute how many copies are needed for this viewport,
+// force an even count (so 50% lands exactly on a copy boundary), and rescale the animation
+// duration to keep pixels-per-second constant no matter how many copies that ends up being.
+(function(){
+  var track=document.getElementById('footMarquee');
+  if(!track||!track.children.length)return;
+  var unitHTML=track.children[0].outerHTML;
+  var PX_PER_SEC=105; // tuned to match the original 22s / 8-copy pace
+  var MIN_COPIES=8;
+  function rebuild(){
+    track.style.animation='none';
+    track.innerHTML=unitHTML;
+    var spanWidth=track.children[0].getBoundingClientRect().width;
+    if(!spanWidth){track.style.animation='';return;}
+    var viewportW=window.innerWidth;
+    var needed=Math.ceil((viewportW*2.4)/spanWidth); // total width will be >= ~1.2x viewport after halving
+    if(needed%2!==0)needed+=1; // must be even: the loop must seam on a whole-copy boundary
+    needed=Math.max(needed,MIN_COPIES);
+    var html='';
+    for(var i=0;i<needed;i++){html+=unitHTML;}
+    track.innerHTML=html;
+    void track.offsetWidth; // force reflow before re-enabling the animation
+    var totalWidth=track.scrollWidth;
+    var duration=(totalWidth/2)/PX_PER_SEC;
+    track.style.animation='marquee '+duration.toFixed(1)+'s linear infinite';
+  }
+  rebuild();
+  var t;
+  window.addEventListener('resize',function(){
+    clearTimeout(t);
+    t=setTimeout(rebuild,250);
+  });
+})();
+})();
+</script>
+</body>
+</html>
