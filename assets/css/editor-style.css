@@ -1,0 +1,139 @@
+/* Gutenberg Editor Styles matching Quterma design system */
+
+:root {
+  --paper:   #F7F4EE;
+  --paper-2: #EDE9DE;
+  --paper-3: #E2DECE;
+  --ink:     #16140F;
+  --ink-2:   #47422F;
+  --ink-3:   #635D4C;
+  --ink-4:   #C7C1AC;
+  --brand:      #2E6B4E;
+  --brand-2:    #5CB584;
+  --brand-pale: #E9F5EE;
+  --accent:      #8A5F0C;
+  --accent-2:    #D9A43C;
+  --bd:      #DAD4C6;
+  --bd-2:    #EBE7DC;
+  --fd: 'Unbounded',-apple-system,BlinkMacSystemFont,sans-serif;
+  --fg: 'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
+  --fs: 'PT Serif',Georgia,serif;
+}
+
+body .editor-styles-wrapper {
+  font-family: var(--fs);
+  color: var(--ink-2);
+  background-color: #FAF8F3;
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.editor-styles-wrapper p {
+  font-family: var(--fs);
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ink-2);
+  margin-bottom: 1.3em;
+}
+
+.editor-styles-wrapper .article-lede {
+  font-family: var(--fg);
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.editor-styles-wrapper h1,
+.editor-styles-wrapper h2,
+.editor-styles-wrapper h3,
+.editor-styles-wrapper h4,
+.editor-styles-wrapper h5,
+.editor-styles-wrapper h6 {
+  font-family: var(--fd);
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin-top: 36px;
+  margin-bottom: 14px;
+}
+
+.editor-styles-wrapper h2 {
+  font-size: 24px;
+}
+
+.editor-styles-wrapper h3 {
+  font-size: 20px;
+}
+
+.editor-styles-wrapper a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.editor-styles-wrapper blockquote,
+.editor-styles-wrapper .wp-block-quote {
+  border-left: 3px solid var(--brand);
+  padding: 2px 0 2px 24px;
+  margin: 34px 0;
+  font-family: var(--fs);
+  font-size: 21px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.editor-styles-wrapper .wp-block-quote cite {
+  font-family: var(--fg);
+  font-size: 13px;
+  font-style: normal;
+  color: var(--ink-3);
+  margin-top: 10px;
+  display: block;
+}
+
+.editor-styles-wrapper ul,
+.editor-styles-wrapper ol {
+  margin: 0 0 1.3em 1.3em;
+}
+
+.editor-styles-wrapper li {
+  margin-bottom: 0.55em;
+  line-height: 1.65;
+}
+
+.editor-styles-wrapper table,
+.editor-styles-wrapper .wp-block-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 30px 0;
+  font-size: 15px;
+}
+
+.editor-styles-wrapper th,
+.editor-styles-wrapper .wp-block-table th {
+  text-align: left;
+  font-family: var(--fd);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.editor-styles-wrapper td,
+.editor-styles-wrapper .wp-block-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--bd-2);
+}
+
+.editor-styles-wrapper figcaption {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-style: italic;
+  margin-top: 8px;
+  text-align: center;
+}
