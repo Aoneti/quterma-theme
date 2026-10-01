@@ -161,64 +161,7 @@ function quterma_get_specials_posts($limit = 4, $exclude_ids = array()) {
 }
 
 /**
- * Get "Кино и музыка" posts.
- * Categories: 'Кино и музыка' ('kino-i-muzyka', 'cinema-music', 'kino', 'muzyka').
- *
- * @param int $limit Number of posts (default 4).
- * @param array $exclude_ids Array of IDs to exclude.
- * @return WP_Query
- */
-function quterma_get_cinema_music_posts($limit = 4, $exclude_ids = array()) {
-    $args = array(
-        'post_type'           => 'post',
-        'post_status'         => 'publish',
-        'posts_per_page'      => $limit,
-        'post__not_in'        => $exclude_ids,
-        'category_name'       => 'kino-i-muzyka,cinema-music,kino,muzyka,iskusstvo,art',
-        'orderby'             => 'date',
-        'order'               => 'DESC',
-        'no_found_rows'       => true,
-    );
-
-    $query = new WP_Query($args);
-
-    if (!$query->have_posts()) {
-        unset($args['category_name']);
-        $query = new WP_Query($args);
-    }
-
-    return $query;
-}
-
-/**
- * Get "Интервью" posts.
- * Category: 'Интервью' ('interview', 'interviews', 'intervyu').
- *
- * @param int $limit Number of posts (default 4).
- * @param array $exclude_ids Array of IDs to exclude.
- * @return WP_Query
- */
-function quterma_get_interview_posts($limit = 4, $exclude_ids = array()) {
-    $args = array(
-        'post_type'           => 'post',
-        'post_status'         => 'publish',
-        'posts_per_page'      => $limit,
-        'post__not_in'        => $exclude_ids,
-        'category_name'       => 'interview,interviews,intervyu',
-        'orderby'             => 'date',
-        'order'               => 'DESC',
-        'no_found_rows'       => true,
-    );
-
-    $query = new WP_Query($args);
-
-    if (!$query->have_posts()) {
-        unset($args['category_name']);
-        $query = new WP_Query($args);
-    }
-
-    return $query;
-}
+ * Universal category posts helper with transient caching.
  *
  * @param string|int $category_slug Category slug or ID.
  * @param int $limit Posts limit.

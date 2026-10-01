@@ -34,28 +34,20 @@ $venues_query = new WP_Query(array(
 
   <!-- ФИЛЬТРЫ ГОРОДОВ И КНОПКА РАСШИРЕННЫХ ФИЛЬТРОВ -->
   <div class="filter-bar rev">
-    <div class="filters-slider-wrap">
-      <button class="filter-scroll-btn filter-scroll-prev" type="button" aria-label="<?php esc_attr_e('Назад', 'quterma'); ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <div class="filters" id="cityFilters">
-        <button type="button" class="filter active" data-city="all"><?php esc_html_e('Все города', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="yaroslavl"><?php esc_html_e('Ярославль', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="rybinsk"><?php esc_html_e('Рыбинск', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="rostov"><?php esc_html_e('Ростов Великий', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="pereslavl"><?php esc_html_e('Переславль-Залесский', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="tutaev"><?php esc_html_e('Тутаев', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="uglich"><?php esc_html_e('Углич', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="gavrilov-yam"><?php esc_html_e('Гаврилов-Ям', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="danilov"><?php esc_html_e('Данилов', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="lyubim"><?php esc_html_e('Любим', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="myshkin"><?php esc_html_e('Мышкин', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="poshekhonye"><?php esc_html_e('Пошехонье', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="breytovo"><?php esc_html_e('Брейтово', 'quterma'); ?></button>
-      </div>
-      <button class="filter-scroll-btn filter-scroll-next" type="button" aria-label="<?php esc_attr_e('Вперед', 'quterma'); ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+    <div class="filters" id="cityFilters">
+      <button type="button" class="filter active" data-city="all"><?php esc_html_e('Все города', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="yaroslavl"><?php esc_html_e('Ярославль', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="rybinsk"><?php esc_html_e('Рыбинск', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="rostov"><?php esc_html_e('Ростов Великий', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="pereslavl"><?php esc_html_e('Переславль-Залесский', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="tutaev"><?php esc_html_e('Тутаев', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="uglich"><?php esc_html_e('Углич', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="gavrilov-yam"><?php esc_html_e('Гаврилов-Ям', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="danilov"><?php esc_html_e('Данилов', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="lyubim"><?php esc_html_e('Любим', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="myshkin"><?php esc_html_e('Мышкин', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="poshekhonye"><?php esc_html_e('Пошехонье', 'quterma'); ?></button>
+      <button type="button" class="filter" data-city="breytovo"><?php esc_html_e('Брейтово', 'quterma'); ?></button>
     </div>
     <button type="button" class="filter-more-btn" id="moreFiltersBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

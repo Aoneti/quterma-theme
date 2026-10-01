@@ -14,11 +14,10 @@ get_header();
 while (have_posts()) : the_post();
     $cat_info     = quterma_get_post_category_info();
     $date_str     = quterma_format_date(get_the_ID(), true);
-    $reading_time = quterma_get_reading_time(get_the_ID());
     $author_id    = get_the_author_meta('ID');
     $author_name  = get_the_author_meta('display_name');
     $initials     = quterma_get_author_initials();
-    $lede         = get_the_excerpt();
+    $lede         = has_excerpt() ? get_the_excerpt() : '';
 
     // Related posts query (from the same category)
     $categories = get_the_category();
@@ -48,8 +47,12 @@ while (have_posts()) : the_post();
         <p class="article-lede"><?php echo esc_html($lede); ?></p>
       <?php endif; ?>
 
-      <div class="article-meta-row" style="border-top:1px solid var(--bd);margin-top:24px;padding-top:16px">
-        <span class="article-meta-sub" style="font-size:var(--t-xs);color:var(--ink-3);font-weight:600"><?php echo esc_html($date_str); ?></span>
+      <div class="article-meta-row" style="border-top:1px solid var(--bd);margin-top:24px;padding-top:16px;display:flex;align-items:center;gap:10px;font-size:var(--t-xs)">
+        <?php if (!empty($author_name)) : ?>
+          <span class="article-meta-author" style="font-weight:700;color:var(--ink)"><?php echo esc_html($author_name); ?></span>
+          <span class="article-meta-sep" style="color:var(--ink-4)">·</span>
+        <?php endif; ?>
+        <span class="article-meta-date" style="color:var(--ink-3);font-weight:500"><?php echo esc_html($date_str); ?></span>
       </div>
     </div>
   </div>

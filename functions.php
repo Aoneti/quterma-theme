@@ -22,7 +22,7 @@ require_once QUTERMA_DIR . '/inc/enqueue.php';
 // 3. Image sizes, WebP support, and responsive image filters
 require_once QUTERMA_DIR . '/inc/images.php';
 
-// 4. Helper utilities (Russian dates, reading time, SVG placeholders, walkers)
+// 4. Helper utilities (Russian dates, SVG placeholders, walkers)
 require_once QUTERMA_DIR . '/inc/helpers.php';
 
 // 5. Query optimizations, transients, and category blocks

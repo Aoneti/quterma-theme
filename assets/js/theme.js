@@ -7,28 +7,49 @@
 (function () {
   'use strict';
 
-  // 1. HEADER SCROLL & SCROLL TOP
+  // 1. HEADER SCROLL & SCROLL TOP & MOBILE AUTO-HIDE ON SCROLL
   var hdr = document.getElementById('header');
   var scrollTopBtn = document.getElementById('scrollTopBtn');
+  var lastScrollY = window.scrollY || 0;
+  var mm = document.getElementById('mobMenu');
+  var mo = document.getElementById('mobOverlay');
+  var so = document.getElementById('srchOverlay');
 
   window.addEventListener('scroll', function () {
+    var currentY = window.scrollY || 0;
     if (hdr) {
-      hdr.classList.toggle('scrolled', window.scrollY > 8);
+      hdr.classList.toggle('scrolled', currentY > 8);
+
+      // Mobile header hide on scroll down, show on scroll up
+      if (window.innerWidth <= 768) {
+        var isMenuOpen = (mm && mm.classList.contains('open')) || (so && so.classList.contains('open'));
+        if (!isMenuOpen) {
+          if (currentY > lastScrollY && currentY > 60) {
+            hdr.classList.add('hdr-hidden');
+          } else if (currentY < lastScrollY || currentY <= 10) {
+            hdr.classList.remove('hdr-hidden');
+          }
+        } else {
+          hdr.classList.remove('hdr-hidden');
+        }
+      } else {
+        hdr.classList.remove('hdr-hidden');
+      }
     }
     if (scrollTopBtn) {
-      scrollTopBtn.classList.toggle('vis', window.scrollY > 400);
+      scrollTopBtn.classList.toggle('vis', currentY > 400);
     }
+    lastScrollY = currentY;
   }, { passive: true });
 
   if (scrollTopBtn) {
     scrollTopBtn.addEventListener('click', function () {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (hdr) hdr.classList.remove('hdr-hidden');
     });
   }
 
   // 2. MOBILE MENU DRAWER
-  var mm = document.getElementById('mobMenu');
-  var mo = document.getElementById('mobOverlay');
   var burgerBtn = document.getElementById('burgerBtn');
   var mobClose = document.getElementById('mobClose');
 

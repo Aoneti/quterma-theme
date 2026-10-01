@@ -29,8 +29,8 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
   </div>
 
   <?php if ($is_tile_layout && have_posts()) :
-      // 1. TILE GRID LAYOUT for Culture / History / People
-      $tile_sizes_cycle = array('size-hero', 'size-tall', '', '', 'size-wide', '', 'size-tall', '');
+      // 1. TILE GRID LAYOUT for Culture / History / People (5 rows x 6 cols fully packed, no bottom gaps)
+      $tile_sizes_cycle = array('size-hero', 'size-tall', 'size-wide', '', '', 'size-wide', 'size-wide', '');
       $tile_posts = array();
       $feed_posts = array();
       $count = 0;
