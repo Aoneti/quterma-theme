@@ -9,8 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$rubrics_page = get_page_by_path('rubrics');
-$rubrics_url  = $rubrics_page ? get_permalink($rubrics_page) : (file_exists(get_template_directory() . '/rubrics.html') ? home_url('/rubrics.html') : home_url('/rubrics/'));
+$rubrics_url = quterma_get_page_url('rubrics', home_url('/rubrics/'));
 
 $tags = get_tags(array(
     'number'  => 16,

@@ -108,10 +108,16 @@ add_action('wp_before_admin_bar_render', function () {
     }
 });
 
-// 6. Disable comments feed
-add_action('do_feed_rss2_comments', function () {
-    wp_die(__('Комментарии на сайте отключены.', 'quterma'), '', array('response' => 403));
-}, 1);
-add_action('do_feed_atom_comments', function () {
-    wp_die(__('Комментарии на сайте отключены.', 'quterma'), '', array('response' => 403));
-}, 1);
+// 6. Disable comments feed across all feed formats
+$quterma_disable_comments_feed = function ($is_comment_feed = false) {
+    if ($is_comment_feed || (function_exists('is_comment_feed') && is_comment_feed())) {
+        wp_die(__('Комментарии на сайте отключены.', 'quterma'), '', array('response' => 403));
+    }
+};
+add_action('do_feed_rss2', $quterma_disable_comments_feed, 1, 1);
+add_action('do_feed_atom', $quterma_disable_comments_feed, 1, 1);
+add_action('do_feed_rss',  $quterma_disable_comments_feed, 1, 1);
+add_action('do_feed_rdf',  $quterma_disable_comments_feed, 1, 1);
+
+// 7. Flush rewrite rules upon theme activation to register CPTs, taxonomies, and custom RSS feeds
+add_action('after_switch_theme', 'flush_rewrite_rules');

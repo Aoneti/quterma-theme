@@ -187,9 +187,8 @@ function quterma_output_schema_json_ld() {
 
         $pos = 2;
         if (is_singular('post')) {
-            $cats = get_the_category();
-            if (!empty($cats)) {
-                $primary_cat = $cats[0];
+            $primary_cat = quterma_get_primary_category();
+            if ($primary_cat) {
                 $breadcrumbs['itemListElement'][] = array(
                     '@type'    => 'ListItem',
                     'position' => $pos++,

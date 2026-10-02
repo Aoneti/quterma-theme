@@ -28,8 +28,8 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
     </div>
   </div>
 
-  <?php if ($is_tile_layout && have_posts()) :
-      // 1. TILE GRID LAYOUT for Culture / History / People (5 rows x 6 cols fully packed, no bottom gaps)
+  <?php if ($is_tile_layout && !is_paged() && have_posts()) :
+      // 1. TILE GRID LAYOUT for Culture / History / People on page 1
       $tile_sizes_cycle = array('size-hero', 'size-tall', 'size-wide', '', '', 'size-wide', 'size-wide', '');
       $tile_posts = array();
       $feed_posts = array();
@@ -61,37 +61,26 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
     <!-- ДОПОЛНИТЕЛЬНЫЕ МАТЕРИАЛЫ С САЙДБАРОМ -->
     <div class="main-layout" style="padding-bottom:0">
       <main>
-        <div class="sec-div" style="margin-top:0">
-          <div class="sec-div-acc"></div>
-          <h2 class="sec-div-title"><?php esc_html_e('Ещё материалы', 'quterma'); ?></h2>
-          <div class="sec-div-line"></div>
-        </div>
+        <?php if (!empty($feed_posts)) : ?>
+          <div class="sec-div" style="margin-top:0">
+            <div class="sec-div-acc"></div>
+            <h2 class="sec-div-title"><?php esc_html_e('Ещё материалы', 'quterma'); ?></h2>
+            <div class="sec-div-line"></div>
+          </div>
 
-        <div class="news-list" id="newsList">
-          <?php
-          if (!empty($feed_posts)) :
-              foreach ($feed_posts as $p) :
-                  $post = $p;
-                  setup_postdata($post);
-                  get_template_part('template-parts/content', 'card');
-              endforeach;
-              wp_reset_postdata();
-          else :
-              // Fallback query for more news if fewer than 9 posts in this specific cat
-              $more_query = new WP_Query(array(
-                  'post_type'      => 'post',
-                  'post_status'    => 'publish',
-                  'posts_per_page' => 4,
-                  'post__not_in'   => wp_list_pluck($tile_posts, 'ID'),
-                  'no_found_rows'  => true,
-              ));
-              while ($more_query->have_posts()) : $more_query->the_post();
-                  get_template_part('template-parts/content', 'card');
-              endwhile;
-              wp_reset_postdata();
-          endif;
-          ?>
-        </div>
+          <div class="news-list" id="newsList">
+            <?php
+            foreach ($feed_posts as $p) :
+                $post = $p;
+                setup_postdata($post);
+                get_template_part('template-parts/content', 'card');
+            endforeach;
+            wp_reset_postdata();
+            ?>
+          </div>
+        <?php endif; ?>
+
+        <?php get_template_part('template-parts/pagination'); ?>
       </main>
 
       <aside class="sidebar">
@@ -102,7 +91,7 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
 
   <?php else : ?>
 
-    <!-- 2. STANDARD FEED LAYOUT (Город, Общество, Экология, etc.) -->
+    <!-- 2. STANDARD FEED LAYOUT (Город, Общество, Экология, or paged Culture/History/People) -->
     <div class="main-layout">
       <main>
         <?php if (have_posts()) : ?>
@@ -111,7 +100,7 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
             $item_index = 0;
             while (have_posts()) : the_post();
                 $item_index++;
-                if ($item_index === 1 && !is_paged()) {
+                if ($item_index === 1 && !is_paged() && !$is_tile_layout) {
                     get_template_part('template-parts/content', 'featured');
                 } else {
                     get_template_part('template-parts/content', 'card');
@@ -120,14 +109,7 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
             ?>
           </div>
 
-          <?php
-          the_posts_pagination(array(
-              'mid_size'           => 2,
-              'prev_text'          => '<span class="nav-prev">&larr; ' . __('Назад', 'quterma') . '</span>',
-              'next_text'          => '<span class="nav-next">' . __('Вперед', 'quterma') . ' &rarr;</span>',
-              'screen_reader_text' => __('Навигация по записям', 'quterma'),
-          ));
-          ?>
+          <?php get_template_part('template-parts/pagination'); ?>
 
         <?php else : ?>
           <div class="empty-state show">
@@ -135,7 +117,7 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
             </div>
             <p class="empty-state-text"><?php esc_html_e('В этой рубрике пока нет опубликованных материалов.', 'quterma'); ?></p>
-            <a href="<?php echo esc_url(home_url('/feed/')); ?>" class="empty-state-btn"><?php esc_html_e('Перейти в ленту', 'quterma'); ?></a>
+            <a href="<?php echo esc_url(quterma_get_news_url()); ?>" class="empty-state-btn"><?php esc_html_e('Перейти в ленту', 'quterma'); ?></a>
           </div>
         <?php endif; ?>
       </main>

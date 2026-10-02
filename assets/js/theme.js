@@ -233,6 +233,7 @@
   })();
 
   // 7. GASTROGUIDE FILTERING
+  // 7. GASTROGUIDE FILTERING (Города, Кухня, Цена, Особенности)
   (function initGastroguideFilters() {
     var cityFilts = document.querySelectorAll('#cityFilters .filter[data-city]');
     var cards = document.querySelectorAll('.venue-card');
@@ -246,19 +247,23 @@
     var curCity = 'all';
     var curType = 'all';
     var curPrice = 'all';
+    var curFeature = 'all';
 
     function applyVenues() {
       var any = false;
+      cards = document.querySelectorAll('.venue-card');
       cards.forEach(function (card) {
-        var cardCity = card.getAttribute('data-city');
-        var cardType = card.getAttribute('data-type');
-        var cardPrice = card.getAttribute('data-price');
+        var cardCity     = card.getAttribute('data-city');
+        var cardType     = (card.getAttribute('data-type') || '').toLowerCase();
+        var cardPrice    = card.getAttribute('data-price');
+        var cardFeatures = (card.getAttribute('data-features') || '').toLowerCase();
 
-        var matchCity = (curCity === 'all' || cardCity === curCity);
-        var matchType = (curType === 'all' || (cardType && cardType.indexOf(curType) !== -1));
-        var matchPrice = (curPrice === 'all' || cardPrice === curPrice);
+        var matchCity    = (curCity === 'all' || cardCity === curCity);
+        var matchType    = (curType === 'all' || cardType.indexOf(curType) !== -1);
+        var matchPrice   = (curPrice === 'all' || cardPrice === curPrice);
+        var matchFeature = (curFeature === 'all' || cardFeatures.indexOf(curFeature) !== -1);
 
-        var show = matchCity && matchType && matchPrice;
+        var show = matchCity && matchType && matchPrice && matchFeature;
         card.style.display = show ? '' : 'none';
         if (show) any = true;
       });
@@ -271,22 +276,32 @@
     cityFilts.forEach(function (b) {
       b.addEventListener('click', function () {
         curCity = b.getAttribute('data-city');
-        cityFilts.forEach(function (x) { x.classList.toggle('active', x === b); });
+        cityFilts.forEach(function (x) {
+          var isActive = (x === b);
+          x.classList.toggle('active', isActive);
+          x.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
         applyVenues();
       });
     });
 
     if (venueReset) {
       venueReset.addEventListener('click', function () {
-        curCity = 'all';
-        curType = 'all';
-        curPrice = 'all';
+        curCity    = 'all';
+        curType    = 'all';
+        curPrice   = 'all';
+        curFeature = 'all';
         cityFilts.forEach(function (x) {
-          x.classList.toggle('active', x.getAttribute('data-city') === 'all');
+          var isAll = (x.getAttribute('data-city') === 'all');
+          x.classList.toggle('active', isAll);
+          x.setAttribute('aria-pressed', isAll ? 'true' : 'false');
         });
-        document.querySelectorAll('#extraFilters .tag').forEach(function (t) {
-          t.classList.remove('active');
-        });
+        if (extra) {
+          extra.querySelectorAll('.tag').forEach(function (t) {
+            t.classList.remove('active');
+            t.setAttribute('aria-pressed', 'false');
+          });
+        }
         applyVenues();
       });
     }
@@ -295,18 +310,24 @@
       moreBtn.addEventListener('click', function () {
         var isOpen = extra.classList.toggle('open');
         moreBtn.classList.toggle('open', isOpen);
+        moreBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       });
 
       extra.querySelectorAll('.tag[data-filter-type]').forEach(function (t) {
         t.addEventListener('click', function () {
-          var val = t.getAttribute('data-filter-type');
+          var val = (t.getAttribute('data-filter-type') || '').toLowerCase();
           if (curType === val) {
             curType = 'all';
             t.classList.remove('active');
+            t.setAttribute('aria-pressed', 'false');
           } else {
-            extra.querySelectorAll('.tag[data-filter-type]').forEach(function (x) { x.classList.remove('active'); });
+            extra.querySelectorAll('.tag[data-filter-type]').forEach(function (x) {
+              x.classList.remove('active');
+              x.setAttribute('aria-pressed', 'false');
+            });
             curType = val;
             t.classList.add('active');
+            t.setAttribute('aria-pressed', 'true');
           }
           applyVenues();
         });
@@ -318,10 +339,35 @@
           if (curPrice === val) {
             curPrice = 'all';
             t.classList.remove('active');
+            t.setAttribute('aria-pressed', 'false');
           } else {
-            extra.querySelectorAll('.tag[data-filter-price]').forEach(function (x) { x.classList.remove('active'); });
+            extra.querySelectorAll('.tag[data-filter-price]').forEach(function (x) {
+              x.classList.remove('active');
+              x.setAttribute('aria-pressed', 'false');
+            });
             curPrice = val;
             t.classList.add('active');
+            t.setAttribute('aria-pressed', 'true');
+          }
+          applyVenues();
+        });
+      });
+
+      extra.querySelectorAll('.tag[data-filter-feature]').forEach(function (t) {
+        t.addEventListener('click', function () {
+          var val = (t.getAttribute('data-filter-feature') || '').toLowerCase();
+          if (curFeature === val) {
+            curFeature = 'all';
+            t.classList.remove('active');
+            t.setAttribute('aria-pressed', 'false');
+          } else {
+            extra.querySelectorAll('.tag[data-filter-feature]').forEach(function (x) {
+              x.classList.remove('active');
+              x.setAttribute('aria-pressed', 'false');
+            });
+            curFeature = val;
+            t.classList.add('active');
+            t.setAttribute('aria-pressed', 'true');
           }
           applyVenues();
         });
@@ -346,9 +392,14 @@
       var any = false;
       cards = document.querySelectorAll('.event-card');
       cards.forEach(function (c) {
-        var cCity = c.getAttribute('data-city');
-        var cWhen = c.getAttribute('data-when');
-        var show = (curCity === 'all' || cCity === curCity) && (curWhen === 'all' || cWhen === curWhen);
+        var cCity = c.getAttribute('data-city') || '';
+        var cWhen = c.getAttribute('data-when') || '';
+        var whenList = cWhen.split(/\s+/);
+
+        var matchCity = (curCity === 'all' || cCity === curCity);
+        var matchWhen = (curWhen === 'all' || whenList.indexOf(curWhen) !== -1);
+        var show = matchCity && matchWhen;
+
         c.style.display = show ? '' : 'none';
         if (show) any = true;
       });
@@ -361,7 +412,11 @@
     cityFilts.forEach(function (b) {
       b.addEventListener('click', function () {
         curCity = b.getAttribute('data-city');
-        cityFilts.forEach(function (x) { x.classList.toggle('active', x === b); });
+        cityFilts.forEach(function (x) {
+          var isActive = (x === b);
+          x.classList.toggle('active', isActive);
+          x.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
         applyEvents();
       });
     });
@@ -369,7 +424,11 @@
     dateFilts.forEach(function (b) {
       b.addEventListener('click', function () {
         curWhen = b.getAttribute('data-when');
-        dateFilts.forEach(function (x) { x.classList.toggle('active', x === b); });
+        dateFilts.forEach(function (x) {
+          var isActive = (x === b);
+          x.classList.toggle('active', isActive);
+          x.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
         applyEvents();
       });
     });
@@ -379,10 +438,14 @@
         curCity = 'all';
         curWhen = 'all';
         cityFilts.forEach(function (x) {
-          x.classList.toggle('active', x.getAttribute('data-city') === 'all');
+          var isAll = (x.getAttribute('data-city') === 'all');
+          x.classList.toggle('active', isAll);
+          x.setAttribute('aria-pressed', isAll ? 'true' : 'false');
         });
         dateFilts.forEach(function (x) {
-          x.classList.toggle('active', x.getAttribute('data-when') === 'all');
+          var isAll = (x.getAttribute('data-when') === 'all');
+          x.classList.toggle('active', isAll);
+          x.setAttribute('aria-pressed', isAll ? 'true' : 'false');
         });
         applyEvents();
       });

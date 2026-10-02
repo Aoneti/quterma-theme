@@ -19,9 +19,8 @@ if (is_front_page()) {
 
   <?php if (is_singular('post')) : ?>
     <?php
-    $cats = get_the_category();
-    if (!empty($cats)) :
-        $cat = $cats[0];
+    $cat = quterma_get_primary_category();
+    if ($cat) :
     ?>
       <a href="<?php echo esc_url(get_category_link($cat)); ?>"><?php echo esc_html($cat->name); ?></a>
       <span class="bc-sep">/</span>

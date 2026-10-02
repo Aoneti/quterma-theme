@@ -149,41 +149,51 @@ function quterma_get_specials_posts($limit = 4, $exclude_ids = array()) {
         'no_found_rows'       => true,
     );
 
-    $query = new WP_Query($args);
-
-    // Fallback: If no posts with those specific categories, fetch oldest/longest or latest posts
-    if (!$query->have_posts()) {
-        unset($args['category_name']);
-        $query = new WP_Query($args);
-    }
-
-    return $query;
+    return new WP_Query($args);
 }
 
 /**
- * Universal category posts helper with transient caching.
+ * Get "Кино и музыка" posts.
+ * Categories: 'Кино и музыка' ('kino-i-muzyka', 'cinema-music', 'kino', 'muzyka').
  *
- * @param string|int $category_slug Category slug or ID.
- * @param int $limit Posts limit.
- * @param array $exclude_ids IDs to exclude.
+ * @param int $limit Number of posts (default 4).
+ * @param array $exclude_ids Array of IDs to exclude.
  * @return WP_Query
  */
-function quterma_get_category_posts($category_slug, $limit = 6, $exclude_ids = array()) {
+function quterma_get_cinema_music_posts($limit = 4, $exclude_ids = array()) {
     $args = array(
         'post_type'           => 'post',
         'post_status'         => 'publish',
         'posts_per_page'      => $limit,
         'post__not_in'        => $exclude_ids,
+        'category_name'       => 'kino-i-muzyka,cinema-music,kino,muzyka',
         'orderby'             => 'date',
         'order'               => 'DESC',
         'no_found_rows'       => true,
     );
 
-    if (is_numeric($category_slug)) {
-        $args['cat'] = (int) $category_slug;
-    } else {
-        $args['category_name'] = sanitize_title($category_slug);
-    }
+    return new WP_Query($args);
+}
+
+/**
+ * Get "Интервью" posts.
+ * Category: 'Интервью' ('interview', 'interviews', 'intervyu').
+ *
+ * @param int $limit Number of posts (default 4).
+ * @param array $exclude_ids Array of IDs to exclude.
+ * @return WP_Query
+ */
+function quterma_get_interview_posts($limit = 4, $exclude_ids = array()) {
+    $args = array(
+        'post_type'           => 'post',
+        'post_status'         => 'publish',
+        'posts_per_page'      => $limit,
+        'post__not_in'        => $exclude_ids,
+        'category_name'       => 'interview,interviews,intervyu',
+        'orderby'             => 'date',
+        'order'               => 'DESC',
+        'no_found_rows'       => true,
+    );
 
     return new WP_Query($args);
 }

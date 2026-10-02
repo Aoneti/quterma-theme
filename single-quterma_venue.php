@@ -82,6 +82,7 @@ while (have_posts()) : the_post();
         <?php the_post_thumbnail('quterma-hero', array(
             'loading'       => 'eager',
             'fetchpriority' => 'high',
+            'sizes'         => '(max-width: 1200px) 100vw, 1200px',
             'alt'           => the_title_attribute(array('echo' => false)),
         )); ?>
       </figure>

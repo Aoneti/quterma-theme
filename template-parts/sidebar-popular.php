@@ -32,7 +32,7 @@ if (empty($popular_posts)) {
           <div class="top-title"><?php echo esc_html(get_the_title($p)); ?></div>
           <div class="top-meta">
             <span class="sr-only"><?php echo esc_html($cat_info['name']); ?> · </span>
-            <?php echo esc_html($date_str); ?>
+            <?php echo quterma_time_tag($p, false); ?>
           </div>
         </div>
       </a>

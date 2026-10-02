@@ -89,12 +89,148 @@ function quterma_register_block_patterns() {
             'description' => __('Строка ключевых показателей для партнерских и информационных страниц', 'quterma'),
             'categories'  => array('quterma'),
             'content'     => '<div class="stat-row">' .
-                             '<div><div class="stat-num">120K</div><div class="stat-label">Читателей в месяц</div></div>' .
-                             '<div><div class="stat-num">45K</div><div class="stat-label">Подписчиков в Telegram</div></div>' .
-                             '<div><div class="stat-num">350+</div><div class="stat-label">Опубликованных историй</div></div>' .
-                             '<div><div class="stat-num">100%</div><div class="stat-label">Локальный фокус</div></div>' .
+                             '<div><div class="stat-num">—</div><div class="stat-label">Показатель 1</div></div>' .
+                             '<div><div class="stat-num">—</div><div class="stat-label">Показатель 2</div></div>' .
+                             '<div><div class="stat-num">—</div><div class="stat-label">Показатель 3</div></div>' .
+                             '<div><div class="stat-num">—</div><div class="stat-label">Показатель 4</div></div>' .
                              '</div>',
         )
     );
 }
 add_action('init', 'quterma_register_block_patterns');
+
+/**
+ * Register post and page metadata for Gutenberg / REST API and classic editor
+ */
+function quterma_register_editorial_meta() {
+    // 1. Interview Hero Name (_iv_person) on posts
+    register_post_meta('post', '_iv_person', array(
+        'show_in_rest'      => true,
+        'single'             => true,
+        'type'               => 'string',
+        'sanitize_callback' => 'sanitize_text_field',
+        'auth_callback'     => function () {
+            return current_user_can('edit_posts');
+        },
+    ));
+
+    // 2. Interview Hero Role / Occupation (_iv_role) on posts
+    register_post_meta('post', '_iv_role', array(
+        'show_in_rest'      => true,
+        'single'             => true,
+        'type'               => 'string',
+        'sanitize_callback' => 'sanitize_text_field',
+        'auth_callback'     => function () {
+            return current_user_can('edit_posts');
+        },
+    ));
+
+    // 3. Page Subtitle (_page_subtitle) on pages
+    register_post_meta('page', '_page_subtitle', array(
+        'show_in_rest'      => true,
+        'single'             => true,
+        'type'               => 'string',
+        'sanitize_callback' => 'sanitize_text_field',
+        'auth_callback'     => function () {
+            return current_user_can('edit_pages');
+        },
+    ));
+}
+add_action('init', 'quterma_register_editorial_meta');
+
+/**
+ * Add editorial meta boxes in WP Admin
+ */
+function quterma_add_editorial_meta_boxes() {
+    // Interview fields on posts
+    add_meta_box(
+        'quterma_interview_meta_box',
+        __('Параметры интервью (герой и должность)', 'quterma'),
+        'quterma_render_interview_meta_box',
+        'post',
+        'normal',
+        'high'
+    );
+
+    // Subtitle field on pages
+    add_meta_box(
+        'quterma_page_meta_box',
+        __('Подзаголовок страницы', 'quterma'),
+        'quterma_render_page_meta_box',
+        'page',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'quterma_add_editorial_meta_boxes');
+
+/**
+ * Render interview meta box
+ */
+function quterma_render_interview_meta_box($post) {
+    wp_nonce_field('quterma_interview_meta_nonce_action', 'quterma_interview_meta_nonce');
+    $person = get_post_meta($post->ID, '_iv_person', true);
+    $role   = get_post_meta($post->ID, '_iv_role', true);
+    ?>
+    <p class="description" style="margin-bottom:12px">
+        <?php esc_html_e('Заполняется для материалов рубрики «Интервью». Если поля оставлены пустыми, в качестве имени героя автоматически используется заголовок статьи.', 'quterma'); ?>
+    </p>
+    <p>
+        <label for="quterma_iv_person"><strong><?php esc_html_e('Имя и фамилия героя:', 'quterma'); ?></strong></label><br>
+        <input type="text" id="quterma_iv_person" name="_iv_person" value="<?php echo esc_attr($person); ?>" style="width:100%;max-width:500px;" placeholder="<?php esc_attr_e('Например: Андрей Данилов', 'quterma'); ?>">
+    </p>
+    <p>
+        <label for="quterma_iv_role"><strong><?php esc_html_e('Род занятий / должность / регалии:', 'quterma'); ?></strong></label><br>
+        <input type="text" id="quterma_iv_role" name="_iv_role" value="<?php echo esc_attr($role); ?>" style="width:100%;max-width:500px;" placeholder="<?php esc_attr_e('Например: архитектор-реставратор, краевед', 'quterma'); ?>">
+    </p>
+    <?php
+}
+
+/**
+ * Render page subtitle meta box
+ */
+function quterma_render_page_meta_box($post) {
+    wp_nonce_field('quterma_page_meta_nonce_action', 'quterma_page_meta_nonce');
+    $subtitle = get_post_meta($post->ID, '_page_subtitle', true);
+    ?>
+    <p class="description" style="margin-bottom:12px">
+        <?php esc_html_e('Подзаголовок выводится крупным шрифтом под заголовком страницы (также можно использовать стандартную цитату страницы / excerpt).', 'quterma'); ?>
+    </p>
+    <p>
+        <input type="text" id="quterma_page_subtitle" name="_page_subtitle" value="<?php echo esc_attr($subtitle); ?>" style="width:100%;" placeholder="<?php esc_attr_e('Краткое описание или лид страницы…', 'quterma'); ?>">
+    </p>
+    <?php
+}
+
+/**
+ * Save editorial meta boxes data
+ */
+function quterma_save_editorial_meta($post_id) {
+    // Check autosave
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    // Save interview meta
+    if (isset($_POST['quterma_interview_meta_nonce']) && wp_verify_nonce($_POST['quterma_interview_meta_nonce'], 'quterma_interview_meta_nonce_action')) {
+        if (current_user_can('edit_post', $post_id)) {
+            if (isset($_POST['_iv_person'])) {
+                update_post_meta($post_id, '_iv_person', sanitize_text_field($_POST['_iv_person']));
+            }
+            if (isset($_POST['_iv_role'])) {
+                update_post_meta($post_id, '_iv_role', sanitize_text_field($_POST['_iv_role']));
+            }
+        }
+    }
+
+    // Save page subtitle meta
+    if (isset($_POST['quterma_page_meta_nonce']) && wp_verify_nonce($_POST['quterma_page_meta_nonce'], 'quterma_page_meta_nonce_action')) {
+        if (current_user_can('edit_page', $post_id)) {
+            if (isset($_POST['_page_subtitle'])) {
+                update_post_meta($post_id, '_page_subtitle', sanitize_text_field($_POST['_page_subtitle']));
+            }
+        }
+    }
+}
+add_action('save_post', 'quterma_save_editorial_meta');
+

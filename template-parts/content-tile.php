@@ -17,7 +17,13 @@ $date_str = quterma_format_date(get_the_ID(), false);
   <?php if (has_post_thumbnail()) : ?>
     <?php
     $thumb_size = (!empty($tile_size) && strpos($tile_size, 'size-hero') !== false) ? 'quterma-tile-large' : 'quterma-tile';
-    the_post_thumbnail($thumb_size, array('class' => 'tile-img', 'loading' => 'lazy', 'alt' => the_title_attribute(array('echo' => false))));
+    $sizes_attr = (!empty($tile_size) && strpos($tile_size, 'size-hero') !== false) ? '(max-width: 768px) 100vw, 840px' : '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 420px';
+    the_post_thumbnail($thumb_size, array(
+        'class'   => 'tile-img',
+        'loading' => 'lazy',
+        'sizes'   => $sizes_attr,
+        'alt'     => the_title_attribute(array('echo' => false)),
+    ));
     ?>
   <?php else : ?>
     <div class="tile-ph ph-img">
@@ -29,8 +35,6 @@ $date_str = quterma_format_date(get_the_ID(), false);
 
   <div class="tile-content">
     <div class="tile-title"><?php the_title(); ?></div>
-    <?php if (!empty($date_str)) : ?>
-      <div class="tile-meta"><?php echo esc_html($date_str); ?></div>
-    <?php endif; ?>
+    <?php echo quterma_time_tag(get_the_ID(), false, 'tile-meta'); ?>
   </div>
 </a>

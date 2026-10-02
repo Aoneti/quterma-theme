@@ -21,17 +21,29 @@ if (empty($type)) {
 }
 $address   = get_post_meta($post_id, '_venue_address', true);
 $price     = get_post_meta($post_id, '_venue_price', true);
+$features  = get_post_meta($post_id, '_venue_features', true);
+if (is_array($features)) {
+    $features_str = implode(' ', array_map('mb_strtolower', $features));
+} elseif (is_string($features)) {
+    $features_str = mb_strtolower($features);
+} else {
+    $features_str = '';
+}
 $desc      = get_the_excerpt();
 if (empty($desc)) {
     $desc = wp_trim_words(get_the_content(), 15, '…');
 }
 ?>
-<a href="<?php the_permalink(); ?>" class="venue-card" data-city="<?php echo esc_attr($city_slug); ?>" data-type="<?php echo esc_attr(mb_strtolower($type)); ?>" data-price="<?php echo esc_attr($price); ?>">
+<a href="<?php the_permalink(); ?>" class="venue-card" data-city="<?php echo esc_attr($city_slug); ?>" data-type="<?php echo esc_attr(mb_strtolower($type)); ?>" data-price="<?php echo esc_attr($price); ?>" data-features="<?php echo esc_attr($features_str); ?>">
   <div class="venue-img">
     <span class="venue-type-badge"><?php echo esc_html($type); ?></span>
     <span class="venue-city-badge"><?php echo esc_html($city_name); ?></span>
     <?php if (has_post_thumbnail()) : ?>
-      <?php the_post_thumbnail('quterma-card-4x3', array('loading' => 'lazy', 'alt' => the_title_attribute(array('echo' => false)))); ?>
+      <?php the_post_thumbnail('quterma-card-4x3', array(
+          'loading' => 'lazy',
+          'sizes'   => '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px',
+          'alt'     => the_title_attribute(array('echo' => false)),
+      )); ?>
     <?php else : ?>
       <?php echo quterma_placeholder_img(38, 38); ?>
     <?php endif; ?>

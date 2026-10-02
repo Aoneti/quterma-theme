@@ -1,16 +1,40 @@
 /* ==========================================================================
    Локальные шрифты темы «Кутерьма» (WOFF2, font-display: swap)
    Шрифты размещаются в папке assets/fonts/
+   Поддерживают полную кириллицу, латиницу, типографику (— … “ ” „) и знак рубля (₽)
    ========================================================================== */
 
 /* ===== 1. UNBOUNDED (Заголовки, логотип, плашки, акценты) ===== */
 @font-face {
   font-family: 'Unbounded';
   font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-200.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-300.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('../fonts/unbounded-500.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-500.woff2') format('woff2');
 }
 
 @font-face {
@@ -18,8 +42,7 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('../fonts/unbounded-600.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-600.woff2') format('woff2');
 }
 
 @font-face {
@@ -27,18 +50,48 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../fonts/unbounded-700.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-800.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-900.woff2') format('woff2');
 }
 
 /* ===== 2. MANROPE (Основной UI, меню, метаданные, формы) ===== */
 @font-face {
   font-family: 'Manrope';
   font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-200.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-300.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../fonts/manrope-400.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-regular.woff2') format('woff2');
 }
 
 @font-face {
@@ -46,8 +99,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('../fonts/manrope-500.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-500.woff2') format('woff2');
 }
 
 @font-face {
@@ -55,8 +107,7 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('../fonts/manrope-600.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-600.woff2') format('woff2');
 }
 
 @font-face {
@@ -64,18 +115,24 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../fonts/manrope-700.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-700.woff2') format('woff2');
 }
 
-/* ===== 3. PT SERIF (Текст статей, заголовки карточек, цитаты) ===== */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-800.woff2') format('woff2');
+}
+
+/* ===== 3. PT SERIF (Тексты статей, заголовки материалов, цитаты) ===== */
 @font-face {
   font-family: 'PT Serif';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../fonts/pt-serif-400.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/pt-serif-v19-cyrillic_cyrillic-ext_latin_latin-ext-regular.woff2') format('woff2');
 }
 
 @font-face {
@@ -83,8 +140,7 @@
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('../fonts/pt-serif-400-italic.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/pt-serif-v19-cyrillic_cyrillic-ext_latin_latin-ext-italic.woff2') format('woff2');
 }
 
 @font-face {
@@ -92,6 +148,15 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../fonts/pt-serif-700.woff2') format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116, U+0000-00FF;
+  src: url('../fonts/pt-serif-v19-cyrillic_cyrillic-ex_latin_latin-ext-700.woff2') format('woff2'),
+       url('../fonts/pt-serif-v19-cyrillic_cyrillic-ext_latin_latin-ext-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'PT Serif';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/pt-serif-v19-cyrillic_cyrillic-ex_latin_latin-ext-700italic.woff2') format('woff2'),
+       url('../fonts/pt-serif-v19-cyrillic_cyrillic-ext_latin_latin-ext-700italic.woff2') format('woff2');
 }

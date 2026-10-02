@@ -1,6 +1,13 @@
 <?php
 /**
- * Integration with API «Культура.РФ» for Events Poster (Афиша событий)
+ * Integration with API «Культура.РФ» for cultural events poster (Афиша)
+ *
+ * Implements:
+ * - Automated background preloading via WP-Cron (every hour)
+ * - ASC sorting by start date with lower bound >= today 00:00:00
+ * - Anti-stampede lock (mutex transient) & stale-while-revalidate pattern
+ * - Strict normalization, timezone awareness (wp_timezone), and date token taxonomy
+ * - Fast local option storage for instant page loads (no 7s render blocks)
  *
  * @package Quterma
  */
@@ -9,84 +16,76 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const QUTERMA_CULTURE_API_ENDPOINT = 'https://all.culture.ru/api/2.3/events';
-const QUTERMA_EVENTS_TRANSIENT_PREFIX = 'quterma_events_api_';
+/**
+ * Register hourly WP-Cron schedule and action for events synchronization
+ */
+function quterma_setup_events_cron() {
+    if (!wp_next_scheduled('quterma_hourly_events_cron')) {
+        wp_schedule_event(time(), 'hourly', 'quterma_hourly_events_cron');
+    }
+}
+add_action('after_switch_theme', 'quterma_setup_events_cron');
+add_action('init', 'quterma_setup_events_cron');
+
+// Unschedule on theme switch
+function quterma_clear_events_cron() {
+    $timestamp = wp_next_scheduled('quterma_hourly_events_cron');
+    if ($timestamp) {
+        wp_unschedule_event($timestamp, 'quterma_hourly_events_cron');
+    }
+}
+add_action('switch_theme', 'quterma_clear_events_cron');
+
+// Hook cron action
+add_action('quterma_hourly_events_cron', 'quterma_sync_culture_events');
 
 /**
- * Fetch events from API «Культура.РФ» with caching and fallback.
+ * Synchronize cultural events from API «Культура.РФ» in background into wp_options
  *
- * @param array $args Filter parameters (city, date, limit, offset).
- * @return array Normalized list of events.
+ * @param bool $force Force sync ignoring lock
+ * @return array Normalized events array
  */
-function quterma_get_culture_events($args = array()) {
-    $city   = isset($args['city']) ? sanitize_text_field($args['city']) : 'all';
-    $when   = isset($args['when']) ? sanitize_text_field($args['when']) : 'all';
-    $limit  = isset($args['limit']) ? min((int) $args['limit'], 50) : 24;
-    $offset = isset($args['offset']) ? (int) $args['offset'] : 0;
+function quterma_sync_culture_events($force = false) {
+    // Prevent thundering herd with a 60-second transient lock
+    if (!$force && get_transient('quterma_events_sync_lock')) {
+        return (array) get_option('quterma_culture_events_data', array());
+    }
+    set_transient('quterma_events_sync_lock', 1, 60);
 
-    $cache_key = QUTERMA_EVENTS_TRANSIENT_PREFIX . md5($city . '_' . $when . '_' . $limit . '_' . $offset);
-    $cached = get_transient($cache_key);
-
-    if (false !== $cached && is_array($cached)) {
-        return $cached;
+    // Support offline fixture testing
+    if (defined('QUTERMA_USE_FIXTURE_EVENTS') && QUTERMA_USE_FIXTURE_EVENTS) {
+        $fixture_file = get_template_directory() . '/tests/events-fixture.json';
+        if (file_exists($fixture_file)) {
+            $data = json_decode(file_get_contents($fixture_file), true);
+            if (!empty($data['events']) && is_array($data['events'])) {
+                $normalized = array();
+                foreach ($data['events'] as $item) {
+                    $ev = quterma_normalize_culture_event($item);
+                    if ($ev) {
+                        $normalized[] = $ev;
+                    }
+                }
+                update_option('quterma_culture_events_data', $normalized, false);
+                update_option('quterma_culture_events_last_sync', time(), false);
+                return $normalized;
+            }
+        }
     }
 
-    // Build API query parameters
+    $api_url = get_theme_mod('quterma_culture_api_url', 'https://opendata.mkrf.ru/v2/events/');
     $api_key = get_theme_mod('quterma_culture_api_key', '');
-    $api_url = QUTERMA_CULTURE_API_ENDPOINT;
+
+    $tz = wp_timezone();
+    $today_dt = new DateTimeImmutable('today', $tz);
+    $start_ms = $today_dt->getTimestamp() * 1000;
 
     $query_params = array(
-        'limit'  => $limit,
-        'offset' => $offset,
-        'sort'   => '-start',
+        'query'  => 'Ярославская область',
         'status' => 'accepted',
+        'start'  => $start_ms, // Lower bound: today 00:00:00 MSK, strictly no past events
+        'sort'   => 'start',    // ASC: closest upcoming events first
+        'limit'  => 100,
     );
-
-    // City parameter mapping for Yaroslavl Region
-    $city_names = array(
-        'yaroslavl'    => 'Ярославль',
-        'rybinsk'      => 'Рыбинск',
-        'rostov'       => 'Ростов',
-        'pereslavl'    => 'Переславль',
-        'tutaev'       => 'Тутаев',
-        'uglich'       => 'Углич',
-        'gavrilov-yam' => 'Гаврилов-Ям',
-        'danilov'      => 'Данилов',
-        'lyubim'       => 'Любим',
-        'myshkin'      => 'Мышкин',
-        'poshekhonye'  => 'Пошехонье',
-        'breytovo'     => 'Брейтово',
-    );
-
-    if ($city !== 'all' && isset($city_names[$city])) {
-        $query_params['query'] = $city_names[$city];
-    } else {
-        $query_params['query'] = 'Ярославская область';
-    }
-
-    // Date range calculation
-    $now = current_time('timestamp');
-    if ($when === 'today') {
-        $start_day = strtotime('today midnight', $now);
-        $end_day   = strtotime('tomorrow midnight', $now) - 1;
-        $query_params['start'] = $start_day * 1000;
-        $query_params['end']   = $end_day * 1000;
-    } elseif ($when === 'tomorrow') {
-        $start_day = strtotime('tomorrow midnight', $now);
-        $end_day   = strtotime('+2 days midnight', $now) - 1;
-        $query_params['start'] = $start_day * 1000;
-        $query_params['end']   = $end_day * 1000;
-    } elseif ($when === 'week') {
-        $start_day = strtotime('today midnight', $now);
-        $end_day   = strtotime('+7 days midnight', $now);
-        $query_params['start'] = $start_day * 1000;
-        $query_params['end']   = $end_day * 1000;
-    } elseif ($when === 'month') {
-        $start_day = strtotime('today midnight', $now);
-        $end_day   = strtotime('+30 days midnight', $now);
-        $query_params['start'] = $start_day * 1000;
-        $query_params['end']   = $end_day * 1000;
-    }
 
     $request_url = add_query_arg($query_params, $api_url);
 
@@ -96,7 +95,7 @@ function quterma_get_culture_events($args = array()) {
     }
 
     $response = wp_remote_get($request_url, array(
-        'timeout'   => 7,
+        'timeout'   => 8,
         'sslverify' => true,
         'headers'   => $headers,
     ));
@@ -109,35 +108,122 @@ function quterma_get_culture_events($args = array()) {
 
         if (!empty($data['events']) && is_array($data['events'])) {
             foreach ($data['events'] as $item) {
-                $events[] = quterma_normalize_culture_event($item);
+                $ev = quterma_normalize_culture_event($item);
+                if ($ev) {
+                    $events[] = $ev;
+                }
             }
         }
     }
 
-    // If API returned empty results or failed, return editorial fallback events
-    if (empty($events)) {
-        $events = quterma_get_fallback_events($city, $when);
+    if (!empty($events)) {
+        // Sort by start timestamp ASC to ensure chronological order
+        usort($events, function ($a, $b) {
+            return $a['start_ts'] - $b['start_ts'];
+        });
+
+        update_option('quterma_culture_events_data', $events, false);
+        update_option('quterma_culture_events_last_sync', time(), false);
+        return $events;
     }
 
-    // Cache results for 2 hours (7200 seconds)
-    set_transient($cache_key, $events, 2 * HOUR_IN_SECONDS);
+    // If API failed or was empty, preserve previously stored events (stale-while-revalidate)
+    return (array) get_option('quterma_culture_events_data', array());
+}
 
-    return $events;
+/**
+ * Retrieve cultural events (reads from local option, background-syncs if missing/stale)
+ *
+ * @param array $args
+ * @return array
+ */
+function quterma_get_culture_events($args = array()) {
+    $defaults = array(
+        'city'  => 'all',
+        'when'  => 'all',
+        'limit' => 100,
+    );
+    $args = wp_parse_args($args, $defaults);
+
+    $city  = sanitize_text_field($args['city']);
+    $when  = sanitize_text_field($args['when']);
+    $limit = min(100, max(1, (int) $args['limit']));
+
+    $events    = get_option('quterma_culture_events_data', null);
+    $last_sync = (int) get_option('quterma_culture_events_last_sync', 0);
+
+    // Initial fill if never synced or stale (> 1 hour)
+    if ($events === null || (time() - $last_sync) > HOUR_IN_SECONDS) {
+        if ($events === null) {
+            // First time load: sync immediately
+            $events = quterma_sync_culture_events(true);
+        } else {
+            // Stale: trigger background sync without delaying current user
+            if (!get_transient('quterma_events_sync_lock')) {
+                wp_schedule_single_event(time(), 'quterma_hourly_events_cron');
+            }
+        }
+    }
+
+    if (!is_array($events)) {
+        $events = array();
+    }
+
+    $tz = wp_timezone();
+    $today_dt    = new DateTimeImmutable('today', $tz);
+    $today_start = $today_dt->getTimestamp();
+
+    // Filter events: strictly >= today, and matching city / when
+    $filtered = array();
+    foreach ($events as $ev) {
+        // Strip past events
+        if (isset($ev['start_ts']) && $ev['start_ts'] < $today_start) {
+            continue;
+        }
+
+        // City filter
+        if ($city !== 'all' && isset($ev['city_slug']) && $ev['city_slug'] !== $city) {
+            continue;
+        }
+
+        // Date filter
+        if ($when !== 'all' && isset($ev['when_tokens'])) {
+            $tokens = explode(' ', $ev['when_tokens']);
+            if (!in_array($when, $tokens, true)) {
+                continue;
+            }
+        }
+
+        $filtered[] = $ev;
+        if (count($filtered) >= $limit) {
+            break;
+        }
+    }
+
+    return $filtered;
 }
 
 /**
  * Normalize an event item from API «Культура.РФ»
+ *
+ * @param array $item
+ * @return array|null
  */
 function quterma_normalize_culture_event($item) {
+    if (empty($item) || !is_array($item)) {
+        return null;
+    }
+
+    $tz = wp_timezone();
     $timestamp = !empty($item['start']) ? (int) ($item['start'] / 1000) : time();
-    $day   = date_i18n('j', $timestamp);
-    $month = date_i18n('M', $timestamp); // 'июля', etc. in Russian locale
-    $time  = date_i18n('H:i', $timestamp);
+    $day   = wp_date('j', $timestamp, $tz);
+    $month = wp_date('F', $timestamp, $tz);
+    $time  = wp_date('H:i', $timestamp, $tz);
+    $iso   = wp_date('c', $timestamp, $tz);
 
     // Determine place and city
     $place_name = '';
     $city_name  = 'Ярославль';
-    $city_slug  = 'yaroslavl';
 
     if (!empty($item['places'][0])) {
         $p = $item['places'][0];
@@ -158,8 +244,10 @@ function quterma_normalize_culture_event($item) {
         $image_url = $item['image']['url'];
     }
 
+    $tokens = quterma_classify_when_tokens($timestamp);
+
     return array(
-        'id'          => !empty($item['_id']) ? $item['_id'] : uniqid(),
+        'id'          => !empty($item['_id']) ? $item['_id'] : uniqid('ev_', true),
         'name'        => !empty($item['name']) ? $item['name'] : '',
         'type'        => $category_name,
         'city_name'   => $city_name,
@@ -167,21 +255,67 @@ function quterma_normalize_culture_event($item) {
         'day'         => $day,
         'month'       => $month,
         'time'        => $time,
+        'iso'         => $iso,
+        'start_ts'    => $timestamp,
         'place'       => $place_name,
         'image'       => $image_url,
-        'when_slug'   => quterma_classify_when($timestamp),
+        'when_tokens' => $tokens,
+        'when_slug'   => quterma_classify_when_primary($timestamp),
         'url'         => !empty($item['externalUrl']) ? $item['externalUrl'] : '#',
     );
 }
 
 /**
- * Helper to classify timestamp into when filter slug ('today', 'tomorrow', 'week', 'month')
+ * Classify timestamp into token string for hierarchical filtering.
+ * E.g. an event today matches "today week month".
+ *
+ * @param int $ts
+ * @return string
  */
-function quterma_classify_when($ts) {
-    $today_start    = strtotime('today midnight');
-    $today_end      = strtotime('tomorrow midnight') - 1;
-    $tomorrow_end   = strtotime('+2 days midnight') - 1;
-    $week_end       = strtotime('+7 days midnight');
+function quterma_classify_when_tokens($ts) {
+    $tz           = wp_timezone();
+    $today_dt     = new DateTimeImmutable('today', $tz);
+    $today_start  = $today_dt->getTimestamp();
+    $today_end    = $today_dt->modify('+1 day')->getTimestamp() - 1;
+    $tomorrow_end = $today_dt->modify('+2 days')->getTimestamp() - 1;
+    $week_end     = $today_dt->modify('+7 days')->getTimestamp();
+    $month_end    = $today_dt->modify('+30 days')->getTimestamp();
+
+    $tokens = array();
+
+    if ($ts >= $today_start && $ts <= $today_end) {
+        $tokens[] = 'today';
+        $tokens[] = 'week';
+        $tokens[] = 'month';
+    } elseif ($ts > $today_end && $ts <= $tomorrow_end) {
+        $tokens[] = 'tomorrow';
+        $tokens[] = 'week';
+        $tokens[] = 'month';
+    } elseif ($ts <= $week_end) {
+        $tokens[] = 'week';
+        $tokens[] = 'month';
+    } elseif ($ts <= $month_end) {
+        $tokens[] = 'month';
+    } else {
+        $tokens[] = 'future';
+    }
+
+    return implode(' ', $tokens);
+}
+
+/**
+ * Primary slug representation of when an event takes place
+ *
+ * @param int $ts
+ * @return string
+ */
+function quterma_classify_when_primary($ts) {
+    $tz           = wp_timezone();
+    $today_dt     = new DateTimeImmutable('today', $tz);
+    $today_start  = $today_dt->getTimestamp();
+    $today_end    = $today_dt->modify('+1 day')->getTimestamp() - 1;
+    $tomorrow_end = $today_dt->modify('+2 days')->getTimestamp() - 1;
+    $week_end     = $today_dt->modify('+7 days')->getTimestamp();
 
     if ($ts >= $today_start && $ts <= $today_end) {
         return 'today';
@@ -195,6 +329,9 @@ function quterma_classify_when($ts) {
 
 /**
  * Helper to slugify city name
+ *
+ * @param string $city_name
+ * @return string
  */
 function quterma_slugify_city($city_name) {
     $map = array(
@@ -203,6 +340,7 @@ function quterma_slugify_city($city_name) {
         'Ростов'               => 'rostov',
         'Ростов Великий'       => 'rostov',
         'Переславль-Залесский' => 'pereslavl',
+        'Переславль'           => 'pereslavl',
         'Тутаев'               => 'tutaev',
         'Углич'                => 'uglich',
         'Гаврилов-Ям'          => 'gavrilov-yam',
@@ -219,137 +357,3 @@ function quterma_slugify_city($city_name) {
     }
     return 'yaroslavl';
 }
-
-/**
- * Fallback events dataset matching prototype if API is unreachable.
- */
-function quterma_get_fallback_events($city = 'all', $when = 'all') {
-    $all_events = array(
-        array(
-            'id'        => 'fb-1',
-            'name'      => 'Открытый концерт городского оркестра на набережной',
-            'type'      => 'Концерт',
-            'city_name' => 'Ярославль',
-            'city_slug' => 'yaroslavl',
-            'day'       => '14',
-            'month'     => 'июля',
-            'time'      => '19:00',
-            'place'     => 'Волжская набережная',
-            'image'     => '',
-            'when_slug' => 'today',
-            'url'       => '#',
-        ),
-        array(
-            'id'        => 'fb-2',
-            'name'      => 'Открытие выставки молодых художников',
-            'type'      => 'Выставка',
-            'city_name' => 'Ярославль',
-            'city_slug' => 'yaroslavl',
-            'day'       => '15',
-            'month'     => 'июля',
-            'time'      => '18:30',
-            'place'     => 'Музей театра и кино',
-            'image'     => '',
-            'when_slug' => 'tomorrow',
-            'url'       => '#',
-        ),
-        array(
-            'id'        => 'fb-3',
-            'name'      => 'Иммерсивный спектакль в дворянской усадьбе',
-            'type'      => 'Спектакль',
-            'city_name' => 'Тутаев',
-            'city_slug' => 'tutaev',
-            'day'       => '18',
-            'month'     => 'июля',
-            'time'      => '17:00',
-            'place'     => 'Дворянская усадьба, Тутаев',
-            'image'     => '',
-            'when_slug' => 'week',
-            'url'       => '#',
-        ),
-        array(
-            'id'        => 'fb-4',
-            'name'      => 'Фестиваль колокольного звона у стен кремля',
-            'type'      => 'Фестиваль',
-            'city_name' => 'Ростов Великий',
-            'city_slug' => 'rostov',
-            'day'       => '19',
-            'month'     => 'июля',
-            'time'      => '12:00',
-            'place'     => 'Ростовский кремль',
-            'image'     => '',
-            'when_slug' => 'week',
-            'url'       => '#',
-        ),
-        array(
-            'id'        => 'fb-5',
-            'name'      => 'Мастер-класс по сыроварению для всей семьи',
-            'type'      => 'Мастер-класс',
-            'city_name' => 'Углич',
-            'city_slug' => 'uglich',
-            'day'       => '2',
-            'month'     => 'авг',
-            'time'      => '11:00',
-            'place'     => 'Сыроварня, Углич',
-            'image'     => '',
-            'when_slug' => 'month',
-            'url'       => '#',
-        ),
-        array(
-            'id'        => 'fb-6',
-            'name'      => 'Ремесленная ярмарка на главной площади',
-            'type'      => 'Ярмарка',
-            'city_name' => 'Мышкин',
-            'city_slug' => 'myshkin',
-            'day'       => '9',
-            'month'     => 'авг',
-            'time'      => '10:00',
-            'place'     => 'Никольская площадь',
-            'image'     => '',
-            'when_slug' => 'month',
-            'url'       => '#',
-        ),
-    );
-
-    $filtered = array();
-    foreach ($all_events as $ev) {
-        $match_city = ($city === 'all' || $ev['city_slug'] === $city);
-        $match_when = ($when === 'all' || $ev['when_slug'] === $when);
-        if ($match_city && $match_when) {
-            $filtered[] = $ev;
-        }
-    }
-
-    return !empty($filtered) ? $filtered : $all_events;
-}
-
-/**
- * AJAX handler for live filtering of events
- */
-function quterma_ajax_get_events() {
-    check_ajax_referer('quterma_nonce', 'nonce');
-
-    $city = isset($_POST['city']) ? sanitize_text_field($_POST['city']) : 'all';
-    $when = isset($_POST['when']) ? sanitize_text_field($_POST['when']) : 'all';
-
-    $events = quterma_get_culture_events(array(
-        'city' => $city,
-        'when' => $when,
-    ));
-
-    ob_start();
-    if (!empty($events)) {
-        foreach ($events as $event) {
-            set_query_var('event_item', $event);
-            get_template_part('template-parts/content', 'event');
-        }
-    }
-    $html = ob_get_clean();
-
-    wp_send_json_success(array(
-        'count' => count($events),
-        'html'  => $html,
-    ));
-}
-add_action('wp_ajax_quterma_get_events', 'quterma_ajax_get_events');
-add_action('wp_ajax_nopriv_quterma_get_events', 'quterma_ajax_get_events');

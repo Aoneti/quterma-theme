@@ -9,10 +9,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$about_page   = get_page_by_path('about');
-$about_url    = $about_page ? get_permalink($about_page) : home_url('/about/');
-$ad_page      = get_page_by_path('advertising');
-$ad_url       = $ad_page ? get_permalink($ad_page) : home_url('/advertising/');
+$about_url    = quterma_get_page_url('about', home_url('/about/'));
+$ad_url       = quterma_get_page_url('advertising', home_url('/advertising/'));
 $email        = get_theme_mod('quterma_email', 'quterma@yandex.ru');
 $telegram     = get_theme_mod('quterma_telegram', 'https://t.me/kuterma');
 $vk           = get_theme_mod('quterma_vk', 'https://vk.com/kuterma');
@@ -32,8 +30,21 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
       <div class="foot-contact">
         <div class="foot-col-title"><?php esc_html_e('Связь', 'quterma'); ?></div>
         <div class="foot-links">
-          <a href="<?php echo esc_url($ad_url); ?>" class="foot-link"><?php esc_html_e('Реклама и партнёрство', 'quterma'); ?></a>
-          <a href="<?php echo esc_url($about_url); ?>" class="foot-link"><?php esc_html_e('Поддержать редакцию', 'quterma'); ?></a>
+          <?php
+          if (has_nav_menu('footer')) {
+              wp_nav_menu(array(
+                  'theme_location' => 'footer',
+                  'container'      => false,
+                  'items_wrap'     => '%3$s',
+                  'depth'          => 1,
+                  'walker'         => new Quterma_Footer_Nav_Walker(),
+                  'fallback_cb'    => false,
+              ));
+          } else {
+          ?>
+            <a href="<?php echo esc_url($ad_url); ?>" class="foot-link"><?php esc_html_e('Реклама и партнёрство', 'quterma'); ?></a>
+            <a href="<?php echo esc_url($about_url); ?>" class="foot-link"><?php esc_html_e('Поддержать редакцию', 'quterma'); ?></a>
+          <?php } ?>
           <a href="mailto:<?php echo esc_attr($email); ?>" class="foot-link foot-email"><?php echo esc_html($email); ?></a>
         </div>
       </div>
@@ -67,7 +78,7 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
 
   <div class="wrap">
     <div class="footer-bot">
-      <span>© <?php bloginfo('name'); ?>. <?php echo date('Y'); ?></span>
+      <span>© <?php bloginfo('name'); ?>. <?php echo wp_date('Y'); ?></span>
       <span><?php esc_html_e('Ярославль', 'quterma'); ?></span>
     </div>
   </div>
@@ -78,6 +89,7 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
   <div class="srch-box">
     <form role="search" method="get" class="srch-inner" action="<?php echo esc_url(home_url('/')); ?>">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:11px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <label for="srchInput" class="sr-only"><?php esc_html_e('Поиск по сайту', 'quterma'); ?></label>
       <input type="search" placeholder="<?php esc_attr_e('Поиск…', 'quterma'); ?>" name="s" id="srchInput" autocomplete="off" value="<?php echo get_search_query(); ?>">
       <button type="button" class="srch-x" id="srchClose" aria-label="<?php esc_attr_e('Закрыть поиск', 'quterma'); ?>"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/></svg></button>
     </form>
@@ -86,7 +98,7 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
 
 <!-- MOBILE OVERLAY & MENU -->
 <div class="mob-overlay" id="mobOverlay"></div>
-<div class="mob-menu" id="mobMenu">
+<div class="mob-menu" id="mobMenu" aria-hidden="true" hidden>
   <div class="mob-hdr">
     <span class="masthead-logo" style="font-size:20px"><?php bloginfo('name'); ?><span class="masthead-dot"></span></span>
     <button type="button" class="mob-close" id="mobClose" aria-label="<?php esc_attr_e('Закрыть меню', 'quterma'); ?>"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/></svg></button>
@@ -98,6 +110,7 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
             'theme_location' => 'mobile',
             'container'      => false,
             'items_wrap'     => '%3$s',
+            'depth'          => 1,
             'walker'         => new Quterma_Mobile_Nav_Walker(),
             'fallback_cb'    => 'quterma_default_mobile_nav',
         ));

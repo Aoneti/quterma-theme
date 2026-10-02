@@ -10,7 +10,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$carousel_query = quterma_get_carousel_posts(6);
+$carousel_query = isset($args['carousel_query']) ? $args['carousel_query'] : get_query_var('carousel_query');
+if (!$carousel_query) {
+    $carousel_query = quterma_get_carousel_posts(6);
+}
 
 if (!$carousel_query->have_posts()) {
     return;
@@ -34,6 +37,7 @@ if (!$carousel_query->have_posts()) {
               the_post_thumbnail('quterma-hero', array(
                   'loading'       => $is_first ? 'eager' : 'lazy',
                   'fetchpriority' => $is_first ? 'high' : 'auto',
+                  'sizes'         => '(max-width: 768px) 100vw, (max-width: 1240px) 960px, 1200px',
                   'alt'           => the_title_attribute(array('echo' => false)),
               ));
               ?>
@@ -49,7 +53,7 @@ if (!$carousel_query->have_posts()) {
               <div class="hc-content">
                 <span class="sr-only"><?php echo esc_html($cat_info['name']); ?></span>
                 <h2 class="hc-title"><?php the_title(); ?></h2>
-                <div class="hc-meta"><?php echo esc_html($date_str); ?></div>
+                <div class="hc-meta"><?php echo quterma_time_tag(get_the_ID(), false); ?></div>
               </div>
             </a>
           </div>

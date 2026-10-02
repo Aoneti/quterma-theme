@@ -22,7 +22,7 @@ get_header();
   </div>
 
   <?php
-  $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+  $paged = max(1, (int) get_query_var('paged'), (int) get_query_var('page'));
   $args = array(
       'post_type'      => 'post',
       'post_status'    => 'publish',
@@ -32,11 +32,6 @@ get_header();
   );
 
   $iv_archive_query = new WP_Query($args);
-
-  if (!$iv_archive_query->have_posts()) {
-      unset($args['category_name']);
-      $iv_archive_query = new WP_Query($args);
-  }
   ?>
 
   <div class="main-layout" style="margin-bottom:24px;padding-bottom:72px">
@@ -53,7 +48,11 @@ get_header();
                 <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
                 <?php if (has_post_thumbnail()) : ?>
                   <div style="aspect-ratio:1/1;overflow:hidden">
-                    <?php the_post_thumbnail('quterma-card-4x3', array('loading' => 'lazy', 'alt' => the_title_attribute(array('echo' => false)))); ?>
+                    <?php the_post_thumbnail('quterma-card-4x3', array(
+                        'loading' => 'lazy',
+                        'sizes'   => '(max-width: 768px) 100vw, 420px',
+                        'alt'     => the_title_attribute(array('echo' => false)),
+                    )); ?>
                   </div>
                 <?php else : ?>
                   <div class="ph-img" style="aspect-ratio:1/1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
@@ -66,7 +65,7 @@ get_header();
                 <?php endif; ?>
                 <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 18, '…'); ?></p>
                 <div class="iv-meta">
-                  <span><?php echo esc_html(get_the_date('j F Y')); ?></span>
+                  <span><?php echo quterma_time_tag(get_the_ID(), false); ?></span>
                   <span class="iv-meta-cta"><?php esc_html_e('Читать диалог →', 'quterma'); ?></span>
                 </div>
               </div>
@@ -75,10 +74,19 @@ get_header();
         </div>
 
         <div style="margin-top:40px">
-          <?php get_template_part('template-parts/pagination'); ?>
+          <?php get_template_part('template-parts/pagination', null, array(
+              'total_pages' => $iv_archive_query->max_num_pages,
+              'current'     => $paged,
+          )); ?>
         </div>
       <?php else : ?>
-        <p><?php esc_html_e('Интервью пока не опубликованы.', 'quterma'); ?></p>
+        <div class="empty-state show">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+          </div>
+          <p class="empty-state-text"><?php esc_html_e('В разделе «Интервью» пока нет опубликованных материалов.', 'quterma'); ?></p>
+          <a href="<?php echo esc_url(quterma_get_news_url()); ?>" class="empty-state-btn"><?php esc_html_e('Перейти в общую ленту', 'quterma'); ?></a>
+        </div>
       <?php endif; ?>
     </main>
 

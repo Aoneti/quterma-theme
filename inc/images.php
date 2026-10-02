@@ -71,45 +71,15 @@ function quterma_post_thumbnail_html($html, $post_id, $post_thumbnail_id, $size,
 add_filter('post_thumbnail_html', 'quterma_post_thumbnail_html', 10, 5);
 
 /**
- * Filter responsive image sizes attribute for better browser asset selection.
- */
-function quterma_calculate_image_sizes($sizes, $size, $image_src, $image_meta, $attachment_id) {
-    if ($size === 'quterma-hero') {
-        return '(max-width: 768px) 100vw, (max-width: 1240px) 960px, 1200px';
-    }
-    if ($size === 'quterma-featured') {
-        return '(max-width: 768px) 100vw, (max-width: 1024px) 720px, 860px';
-    }
-    if ($size === 'quterma-card') {
-        return '(max-width: 480px) 100vw, (max-width: 768px) 150px, 240px';
-    }
-    if ($size === 'quterma-card-4x3') {
-        return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px';
-    }
-    return $sizes;
-}
-add_filter('wp_calculate_image_sizes', 'quterma_calculate_image_sizes', 10, 5);
-
-/**
- * Support WebP and AVIF generation if supported by server (GD / Imagick)
+ * Support WebP generation if supported by active server image editor (GD / Imagick)
  */
 function quterma_image_editor_output_format($formats) {
-    $formats['image/jpeg'] = 'image/webp';
-    $formats['image/png']  = 'image/webp';
+    if (function_exists('wp_image_editor_supports') && wp_image_editor_supports(array('mime_type' => 'image/webp'))) {
+        $formats['image/jpeg'] = 'image/webp';
+        $formats['image/png']  = 'image/webp';
+    }
     return $formats;
 }
-// Only enable WebP auto-conversion if GD or Imagick supports webp
-if (function_exists('imagick_supports_format') || function_exists('imagewebp')) {
-    add_filter('image_editor_output_format', 'quterma_image_editor_output_format');
-}
+add_filter('image_editor_output_format', 'quterma_image_editor_output_format');
 
-/**
- * Allow SVG upload for admin/editors for editorial brand icons
- */
-function quterma_mime_types($mimes) {
-    $mimes['svg']  = 'image/svg+xml';
-    $mimes['svgz'] = 'image/svg+xml';
-    $mimes['webp'] = 'image/webp';
-    return $mimes;
-}
-add_filter('upload_mimes', 'quterma_mime_types');
+

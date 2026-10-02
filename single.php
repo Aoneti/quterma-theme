@@ -19,9 +19,9 @@ while (have_posts()) : the_post();
     $initials     = quterma_get_author_initials();
     $lede         = has_excerpt() ? get_the_excerpt() : '';
 
-    // Related posts query (from the same category)
-    $categories = get_the_category();
-    $related_cat_id = !empty($categories) ? $categories[0]->term_id : 0;
+    // Related posts query (from the primary editorial category, excluding service placement categories)
+    $primary_cat = quterma_get_primary_category();
+    $related_cat_id = $primary_cat ? $primary_cat->term_id : 0;
     $related_query = new WP_Query(array(
         'post_type'           => 'post',
         'post_status'         => 'publish',
@@ -33,6 +33,7 @@ while (have_posts()) : the_post();
     ));
 ?>
 
+<main id="content">
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
   <div class="wrap" style="padding-top:24px">
     <div style="max-width:820px;margin-left:auto;margin-right:auto">
@@ -52,7 +53,7 @@ while (have_posts()) : the_post();
           <span class="article-meta-author" style="font-weight:700;color:var(--ink)"><?php echo esc_html($author_name); ?></span>
           <span class="article-meta-sep" style="color:var(--ink-4)">·</span>
         <?php endif; ?>
-        <span class="article-meta-date" style="color:var(--ink-3);font-weight:500"><?php echo esc_html($date_str); ?></span>
+        <span class="article-meta-date" style="color:var(--ink-3);font-weight:500"><?php echo quterma_time_tag(get_the_ID(), true); ?></span>
       </div>
     </div>
   </div>
@@ -66,6 +67,7 @@ while (have_posts()) : the_post();
         <?php the_post_thumbnail('quterma-hero', array(
             'loading'       => 'eager',
             'fetchpriority' => 'high',
+            'sizes'         => '(max-width: 768px) 100vw, 820px',
             'alt'           => the_title_attribute(array('echo' => false)),
         )); ?>
       </figure>
@@ -76,6 +78,15 @@ while (have_posts()) : the_post();
 
     <div class="article-col article-body rev">
       <?php the_content(); ?>
+
+      <?php
+      wp_link_pages(array(
+          'before'      => '<nav class="page-links" aria-label="' . esc_attr__('Страницы материала', 'quterma') . '"><span class="page-links-title">' . __('Страницы:', 'quterma') . '</span>',
+          'after'       => '</nav>',
+          'link_before' => '<span class="page-number">',
+          'link_after'  => '</span>',
+      ));
+      ?>
     </div>
 
     <?php
@@ -92,12 +103,17 @@ while (have_posts()) : the_post();
         </div>
       </div>
     <?php endif; ?>
-    <?php if (!empty($author_name)) : ?>
+    <?php
+    $author_bio = get_the_author_meta('description');
+    if (!empty($author_name)) :
+    ?>
       <div class="article-author-box">
         <div class="article-author-av"><?php echo esc_html($initials); ?></div>
         <div>
           <div class="article-author-box-name"><?php echo esc_html($author_name); ?></div>
-          <div class="article-author-box-bio"><?php echo esc_html(get_the_author_meta('description') ?: 'Журналист редакции «Кутерьма». Пишет о культуре, архитектурном наследии и людях, меняющих городскую среду Ярославля.'); ?></div>
+          <?php if (!empty($author_bio)) : ?>
+            <div class="article-author-box-bio"><?php echo esc_html($author_bio); ?></div>
+          <?php endif; ?>
         </div>
       </div>
     <?php endif; ?>
@@ -116,19 +132,22 @@ while (have_posts()) : the_post();
     <div class="related-grid">
       <?php
       while ($related_query->have_posts()) : $related_query->the_post();
-          $rel_date = quterma_format_date(get_the_ID(), false);
       ?>
         <a href="<?php the_permalink(); ?>" class="cc-card">
           <div class="cc-img">
             <?php if (has_post_thumbnail()) : ?>
-              <?php the_post_thumbnail('quterma-card-4x3', array('loading' => 'lazy', 'alt' => the_title_attribute(array('echo' => false)))); ?>
+              <?php the_post_thumbnail('quterma-card-4x3', array(
+                  'loading' => 'lazy',
+                  'sizes'   => '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px',
+                  'alt'     => the_title_attribute(array('echo' => false)),
+              )); ?>
             <?php else : ?>
               <?php echo quterma_placeholder_img(38, 38); ?>
             <?php endif; ?>
           </div>
           <div class="cc-body">
             <h3 class="cc-title"><?php the_title(); ?></h3>
-            <div class="cc-meta"><?php echo esc_html($rel_date); ?></div>
+            <div class="cc-meta"><?php echo quterma_time_tag(get_the_ID(), false); ?></div>
           </div>
         </a>
       <?php endwhile; wp_reset_postdata(); ?>
@@ -136,6 +155,8 @@ while (have_posts()) : the_post();
   </div>
 </section>
 <?php endif; ?>
+</main>
+
 
 <?php
 endwhile;

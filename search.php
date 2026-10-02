@@ -26,7 +26,8 @@ $query_str     = get_search_query();
 
   <div class="search-form-wrap rev">
     <form role="search" method="get" action="<?php echo esc_url(home_url('/')); ?>" class="search-input-box">
-      <input type="search" name="s" value="<?php echo esc_attr($query_str); ?>" placeholder="<?php esc_attr_e('Что вы хотите найти? Например: набережная, театр, ремонт дорог…', 'quterma'); ?>" autocomplete="off" autofocus>
+      <label for="searchPageInput" class="sr-only"><?php esc_html_e('Поисковый запрос', 'quterma'); ?></label>
+      <input type="search" id="searchPageInput" name="s" value="<?php echo esc_attr($query_str); ?>" placeholder="<?php esc_attr_e('Что вы хотите найти? Например: набережная, театр, ремонт дорог…', 'quterma'); ?>" autocomplete="off" autofocus>
       <button type="submit" class="search-submit-btn"><?php esc_html_e('Найти', 'quterma'); ?></button>
     </form>
   </div>
@@ -35,9 +36,11 @@ $query_str     = get_search_query();
     <div class="search-info">
       <?php
       if ($total_results > 0) {
+          $word = quterma_plural($total_results, array('материал', 'материала', 'материалов'));
           printf(
-              _n('Найдено %1$d материал по запросу <strong>«%2$s»</strong>', 'Найдено %1$d материалов по запросу <strong>«%2$s»</strong>', $total_results, 'quterma'),
+              __('Найдено %1$d %2$s по запросу <strong>«%3$s»</strong>', 'quterma'),
               $total_results,
+              $word,
               esc_html($query_str)
           );
       } else {

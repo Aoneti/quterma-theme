@@ -32,6 +32,15 @@ while (have_posts()) : the_post();
 
   <div class="page-content rev" style="padding-bottom:60px">
     <?php the_content(); ?>
+
+    <?php
+    wp_link_pages(array(
+        'before'      => '<nav class="page-links" aria-label="' . esc_attr__('Страницы материала', 'quterma') . '"><span class="page-links-title">' . __('Страницы:', 'quterma') . '</span>',
+        'after'       => '</nav>',
+        'link_before' => '<span class="page-number">',
+        'link_after'  => '</span>',
+    ));
+    ?>
   </div>
 </div>
 
