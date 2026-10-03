@@ -95,32 +95,41 @@ function quterma_time_tag($post = null, $with_time = false, $class = '') {
  *
  * @return array
  */
-function quterma_get_cities() {
-    return array(
-        'yaroslavl'    => __('Ярославль', 'quterma'),
-        'rybinsk'      => __('Рыбинск', 'quterma'),
-        'rostov'       => __('Ростов Великий', 'quterma'),
-        'pereslavl'    => __('Переславль-Залесский', 'quterma'),
-        'tutaev'       => __('Тутаев', 'quterma'),
-        'uglich'       => __('Углич', 'quterma'),
-        'gavrilov-yam' => __('Гаврилов-Ям', 'quterma'),
-        'danilov'      => __('Данилов', 'quterma'),
-        'lyubim'       => __('Любим', 'quterma'),
-        'myshkin'      => __('Мышкин', 'quterma'),
-        'poshekhonye'  => __('Пошехонье', 'quterma'),
-        'breytovo'     => __('Брейтово', 'quterma'),
-    );
+if (!function_exists('quterma_get_cities')) {
+    /**
+     * Canonical registry of Yaroslavl region cities for gastroguide and events
+     *
+     * @return array
+     */
+    function quterma_get_cities() {
+        return array(
+            'yaroslavl'    => __('Ярославль', 'quterma'),
+            'rybinsk'      => __('Рыбинск', 'quterma'),
+            'rostov'       => __('Ростов Великий', 'quterma'),
+            'pereslavl'    => __('Переславль-Залесский', 'quterma'),
+            'tutaev'       => __('Тутаев', 'quterma'),
+            'uglich'       => __('Углич', 'quterma'),
+            'gavrilov-yam' => __('Гаврилов-Ям', 'quterma'),
+            'danilov'      => __('Данилов', 'quterma'),
+            'lyubim'       => __('Любим', 'quterma'),
+            'myshkin'      => __('Мышкин', 'quterma'),
+            'poshekhonye'  => __('Пошехонье', 'quterma'),
+            'breytovo'     => __('Брейтово', 'quterma'),
+        );
+    }
 }
 
-/**
- * Get human-readable Russian city name by slug
- *
- * @param string $slug
- * @return string
- */
-function quterma_get_city_name($slug) {
-    $cities = quterma_get_cities();
-    return isset($cities[$slug]) ? $cities[$slug] : __('Ярославль', 'quterma');
+if (!function_exists('quterma_get_city_name')) {
+    /**
+     * Get human-readable Russian city name by slug
+     *
+     * @param string $slug
+     * @return string
+     */
+    function quterma_get_city_name($slug) {
+        $cities = quterma_get_cities();
+        return isset($cities[$slug]) ? $cities[$slug] : __('Ярославль', 'quterma');
+    }
 }
 
 /**
@@ -201,10 +210,11 @@ function quterma_get_page_url($slug, $fallback = null) {
 
     $cache_key = 'quterma_purl_' . $clean_slug;
     $cached_url = get_transient($cache_key);
-    if (false !== $cached_url) {
-        return !empty($cached_url) ? $cached_url : $fallback;
+    if (false !== $cached_url && !empty($cached_url)) {
+        return $cached_url;
     }
 
+    // 1. Check if a WordPress Page exists with this slug
     $page = get_page_by_path($slug);
     if ($page) {
         $url = get_permalink($page);
@@ -212,27 +222,64 @@ function quterma_get_page_url($slug, $fallback = null) {
         return $url;
     }
 
-    set_transient($cache_key, '', DAY_IN_SECONDS);
+    // 2. Check if a WordPress Category exists with this slug (e.g. culture, people, history, news)
+    $cat = get_category_by_slug($slug);
+    if ($cat) {
+        $url = get_category_link($cat);
+        set_transient($cache_key, $url, DAY_IN_SECONDS);
+        return $url;
+    }
+
     return $fallback;
 }
 
-// Bust page URL transients when a page is created, updated or deleted
+// Bust page URL transients when a page or category is created, updated or deleted
 add_action('save_post_page', function ($post_id, $post) {
     if ($post && !empty($post->post_name)) {
         delete_transient('quterma_purl_' . sanitize_title($post->post_name));
     }
 }, 10, 2);
+add_action('saved_term', function ($term_id, $tt_id, $taxonomy) {
+    if ($taxonomy === 'category') {
+        $term = get_term($term_id, 'category');
+        if ($term && !is_wp_error($term)) {
+            delete_transient('quterma_purl_' . sanitize_title($term->slug));
+        }
+    }
+}, 10, 3);
 
 /**
  * Get dynamic URL for posts archive (Все новости / Лента)
- * Avoids reserved /feed/ endpoint
+ * Checks Category 'news', page_for_posts, Page 'news', or fallback to /category/news/
  */
 function quterma_get_news_url() {
+    $cat = get_category_by_slug('news');
+    if ($cat) {
+        return get_category_link($cat);
+    }
     $page_for_posts = get_option('page_for_posts');
     if ($page_for_posts) {
-        return get_permalink($page_for_posts);
+        $p = get_post($page_for_posts);
+        if ($p && $p->post_status === 'publish') {
+            return get_permalink($page_for_posts);
+        }
     }
-    return quterma_get_page_url('news', home_url('/news/'));
+    $page = get_page_by_path('news');
+    if ($page && $page->post_status === 'publish') {
+        return get_permalink($page);
+    }
+    return home_url('/category/news/');
+}
+
+/**
+ * Get canonical URL for a WordPress Category
+ */
+function quterma_get_category_url($slug, $fallback = '') {
+    $cat = get_category_by_slug($slug);
+    if ($cat) {
+        return get_category_link($cat);
+    }
+    return !empty($fallback) ? $fallback : home_url('/category/' . sanitize_title($slug) . '/');
 }
 
 /**
@@ -426,13 +473,13 @@ function quterma_default_desktop_nav() {
     $links = array(
         array('title' => __('Главная', 'quterma'), 'url' => home_url('/')),
         array('title' => __('Все новости', 'quterma'), 'url' => quterma_get_news_url()),
-        array('title' => __('Город', 'quterma'), 'url' => home_url('/category/city/')),
-        array('title' => __('Культура', 'quterma'), 'url' => home_url('/category/culture/')),
-        array('title' => __('Искусство', 'quterma'), 'url' => home_url('/category/art/')),
-        array('title' => __('Люди', 'quterma'), 'url' => home_url('/category/people/')),
-        array('title' => __('История', 'quterma'), 'url' => home_url('/category/history/')),
-        array('title' => __('Гастрогид', 'quterma'), 'url' => home_url('/gastroguide/')),
-        array('title' => __('События', 'quterma'), 'url' => home_url('/events/')),
+        array('title' => __('Город', 'quterma'), 'url' => quterma_get_category_url('city', home_url('/category/city/'))),
+        array('title' => __('Культура', 'quterma'), 'url' => quterma_get_category_url('culture', home_url('/category/culture/'))),
+        array('title' => __('Искусство', 'quterma'), 'url' => quterma_get_category_url('art', home_url('/category/art/'))),
+        array('title' => __('Люди', 'quterma'), 'url' => quterma_get_category_url('people', home_url('/category/people/'))),
+        array('title' => __('История', 'quterma'), 'url' => quterma_get_category_url('history', home_url('/category/history/'))),
+        array('title' => __('Гастрогид', 'quterma'), 'url' => quterma_get_page_url('gastroguide', home_url('/gastroguide/'))),
+        array('title' => __('События', 'quterma'), 'url' => quterma_get_page_url('events', home_url('/events/'))),
     );
 
     $current_url = home_url(add_query_arg(array(), $GLOBALS['wp']->request));
@@ -455,13 +502,13 @@ function quterma_default_mobile_nav() {
     $links = array(
         array('title' => __('Главная', 'quterma'), 'url' => home_url('/')),
         array('title' => __('Все новости', 'quterma'), 'url' => quterma_get_news_url()),
-        array('title' => __('Город', 'quterma'), 'url' => home_url('/category/city/')),
-        array('title' => __('Культура', 'quterma'), 'url' => home_url('/category/culture/')),
-        array('title' => __('Искусство', 'quterma'), 'url' => home_url('/category/art/')),
-        array('title' => __('Люди', 'quterma'), 'url' => home_url('/category/people/')),
-        array('title' => __('История', 'quterma'), 'url' => home_url('/category/history/')),
-        array('title' => __('Гастрогид', 'quterma'), 'url' => home_url('/gastroguide/')),
-        array('title' => __('События', 'quterma'), 'url' => home_url('/events/')),
+        array('title' => __('Город', 'quterma'), 'url' => quterma_get_category_url('city', home_url('/category/city/'))),
+        array('title' => __('Культура', 'quterma'), 'url' => quterma_get_category_url('culture', home_url('/category/culture/'))),
+        array('title' => __('Искусство', 'quterma'), 'url' => quterma_get_category_url('art', home_url('/category/art/'))),
+        array('title' => __('Люди', 'quterma'), 'url' => quterma_get_category_url('people', home_url('/category/people/'))),
+        array('title' => __('История', 'quterma'), 'url' => quterma_get_category_url('history', home_url('/category/history/'))),
+        array('title' => __('Гастрогид', 'quterma'), 'url' => quterma_get_page_url('gastroguide', home_url('/gastroguide/'))),
+        array('title' => __('События', 'quterma'), 'url' => quterma_get_page_url('events', home_url('/events/'))),
     );
 
     $current_url = home_url(add_query_arg(array(), $GLOBALS['wp']->request));

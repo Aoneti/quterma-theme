@@ -44,6 +44,18 @@ while (have_posts()) : the_post();
       <div class="article-kicker"><?php echo esc_html($cat_info['name']); ?></div>
       <h1 class="article-headline"><?php the_title(); ?></h1>
 
+      <?php
+      $iv_person = get_post_meta(get_the_ID(), '_iv_person', true);
+      $iv_role   = get_post_meta(get_the_ID(), '_iv_role', true);
+      if (!empty($iv_person) || !empty($iv_role)) : ?>
+        <div class="interview-person-hero" style="margin-top:14px;padding:12px 18px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:2px">
+          <div style="font-family:var(--fs);font-size:22px;font-weight:700;color:var(--ink)"><?php echo esc_html($iv_person ? $iv_person : get_the_title()); ?></div>
+          <?php if (!empty($iv_role)) : ?>
+            <div style="font-size:var(--t-xs);color:var(--ink-3);margin-top:2px;font-weight:600"><?php echo esc_html($iv_role); ?></div>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
       <?php if (!empty($lede)) : ?>
         <p class="article-lede"><?php echo esc_html($lede); ?></p>
       <?php endif; ?>

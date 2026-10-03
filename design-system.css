@@ -84,7 +84,7 @@ h1,h2,h3,h4{font-weight:inherit;font-size:inherit;line-height:inherit;letter-spa
 .icon-btn:focus-visible,.foot-soc-big:focus-visible,.scroll-top:focus-visible,
 .hc-arrow:focus-visible,.hc-dot:focus-visible,.mob-close:focus-visible{
   outline-offset:2px;border-radius:50%}
-.nav-pill:focus-visible,.filter:focus-visible,.tag:focus-visible,.foot-cta-btn:focus-visible,
+.nav-pill:focus-visible,.filter:focus-visible,a.tag:focus-visible,button.tag:focus-visible,.foot-cta-btn:focus-visible,
 .load-more:focus-visible,.feed-empty-btn:focus-visible,.btn-pill:focus-visible{border-radius:999px}
 input:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:1px;border-radius:4px}
 
@@ -384,11 +384,15 @@ input:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outlin
 .rubric-count{font-size:11px;font-weight:700;color:var(--ink-3);background:var(--paper-2);
   padding:2px 7px;border-radius:10px;transition:all .15s}
 .tags-cloud{display:flex;flex-wrap:wrap;gap:6px}
-.tag{padding:5px 12px;border:1px solid var(--bd);border-radius:2px;
+a.tag, button.tag, span.tag, .tags-cloud > .tag, .filter-extra-opts > .tag{padding:5px 12px;border:1px solid var(--bd);border-radius:2px;
   font-family:var(--fd);font-size:var(--t-xs);font-weight:600;letter-spacing:.02em;
-  text-transform:uppercase;color:var(--ink-3);transition:background .15s,color .15s;cursor:pointer}
-.tag:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
-.tag:active{background:var(--brand);opacity:.8}
+  text-transform:uppercase;color:var(--ink-3);background:var(--paper);transition:background .15s,color .15s,border-color .15s;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
+a.tag:hover, button.tag:hover, span.tag:hover, .tags-cloud > .tag:hover, .filter-extra-opts > .tag:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+a.tag:active, button.tag:active, span.tag:active, .tags-cloud > .tag:active, .filter-extra-opts > .tag:active{background:var(--brand);opacity:.85}
+a.tag.active, button.tag.active, span.tag.active,
+a.tag[aria-pressed="true"], button.tag[aria-pressed="true"],
+.filter-extra-opts > .tag.active, .filter-extra-opts > .tag[aria-pressed="true"]{background:var(--brand) !important;color:#fff !important;border-color:var(--brand) !important}
+body.tag, body.tag:hover, body.tag:focus, body.tag:active{background:var(--bg) !important;color:var(--ink) !important;outline:none !important}
 
 /* ===== ARTICLE BODY (PT Serif Regular — the payoff of the serif import) ===== */
 .article-body{font-family:var(--fs);font-weight:400;font-size:17px;

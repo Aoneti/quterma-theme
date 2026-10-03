@@ -1,6 +1,6 @@
 <?php
 /**
- * Template part for displaying "Читают сейчас" popular materials
+ * Template part for displaying "Читают сейчас" popular materials with period switcher
  *
  * @package Quterma
  */
@@ -9,33 +9,85 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$popular_posts = quterma_get_popular_posts(5);
+$periods = array(
+    'today'     => __('Сегодня', 'quterma'),
+    'yesterday' => __('Вчера', 'quterma'),
+    'week'      => __('Неделя', 'quterma'),
+    'month'     => __('Месяц', 'quterma'),
+);
 
-if (empty($popular_posts)) {
+$period_posts = array();
+$has_any_posts = false;
+foreach (array_keys($periods) as $pkey) {
+    $posts = quterma_get_popular_posts_by_period($pkey, 5);
+    $period_posts[$pkey] = $posts;
+    if (!empty($posts)) {
+        $has_any_posts = true;
+    }
+}
+
+// Global fallback if database has posts but specific periods returned empty
+$all_time_popular = quterma_get_popular_posts(5);
+if (!empty($all_time_popular)) {
+    $has_any_posts = true;
+    // Ensure at least 'today' or 'week' has posts if fresh install
+    if (empty($period_posts['today']) && empty($period_posts['week'])) {
+        $period_posts['today'] = $all_time_popular;
+    }
+}
+
+if (!$has_any_posts) {
     return;
 }
 ?>
 <div>
   <h2 class="sb-title"><?php esc_html_e('Читают сейчас', 'quterma'); ?></h2>
-  <div class="top-list">
+
+  <div class="top-period-nav" role="tablist" aria-label="<?php esc_attr_e('Период популярного', 'quterma'); ?>">
     <?php
-    $index = 0;
-    foreach ($popular_posts as $p) :
-        $index++;
-        $num_str  = sprintf('%02d', $index);
-        $cat_info = quterma_get_post_category_info($p);
-        $date_str = quterma_format_date($p, false);
+    $first = true;
+    foreach ($periods as $pkey => $plabel) :
+        $active_cls = $first ? ' active' : '';
+        $first = false;
     ?>
-      <a href="<?php echo esc_url(get_permalink($p)); ?>" class="top-item">
-        <div class="top-num"><?php echo esc_html($num_str); ?></div>
-        <div>
-          <div class="top-title"><?php echo esc_html(get_the_title($p)); ?></div>
-          <div class="top-meta">
-            <span class="sr-only"><?php echo esc_html($cat_info['name']); ?> · </span>
-            <?php echo quterma_time_tag($p, false); ?>
-          </div>
-        </div>
-      </a>
+      <button type="button" class="top-period-btn<?php echo esc_attr($active_cls); ?>" data-period="<?php echo esc_attr($pkey); ?>" role="tab" aria-selected="<?php echo $active_cls ? 'true' : 'false'; ?>">
+        <?php echo esc_html($plabel); ?>
+      </button>
     <?php endforeach; ?>
   </div>
+
+  <?php
+  $first_list = true;
+  foreach ($periods as $pkey => $plabel) :
+      $display = $first_list ? 'flex' : 'none';
+      $first_list = false;
+      $current_list = !empty($period_posts[$pkey]) ? $period_posts[$pkey] : array();
+  ?>
+    <div class="top-list" data-period="<?php echo esc_attr($pkey); ?>" style="display:<?php echo esc_attr($display); ?>">
+      <?php if (!empty($current_list)) : ?>
+        <?php
+        $index = 0;
+        foreach ($current_list as $p) :
+            $index++;
+            $num_str  = sprintf('%02d', $index);
+            $cat_info = quterma_get_post_category_info($p);
+        ?>
+          <a href="<?php echo esc_url(get_permalink($p)); ?>" class="top-item">
+            <div class="top-num"><?php echo esc_html($num_str); ?></div>
+            <div>
+              <div class="top-title"><?php echo esc_html(get_the_title($p)); ?></div>
+              <div class="top-meta">
+                <span class="sr-only"><?php echo esc_html($cat_info['name']); ?> · </span>
+                <?php echo quterma_time_tag($p, false); ?>
+              </div>
+            </div>
+          </a>
+        <?php endforeach; ?>
+      <?php else : ?>
+        <div class="top-empty" style="padding:18px 4px;font-size:var(--t-xs);color:var(--ink-3);line-height:1.4">
+          <?php esc_html_e('Нет материалов за этот период', 'quterma'); ?>
+        </div>
+      <?php endif; ?>
+    </div>
+  <?php endforeach; ?>
 </div>

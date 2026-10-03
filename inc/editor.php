@@ -103,27 +103,29 @@ add_action('init', 'quterma_register_block_patterns');
  * Register post and page metadata for Gutenberg / REST API and classic editor
  */
 function quterma_register_editorial_meta() {
-    // 1. Interview Hero Name (_iv_person) on posts
-    register_post_meta('post', '_iv_person', array(
-        'show_in_rest'      => true,
-        'single'             => true,
-        'type'               => 'string',
-        'sanitize_callback' => 'sanitize_text_field',
-        'auth_callback'     => function () {
-            return current_user_can('edit_posts');
-        },
-    ));
+    // 1. Interview Hero Name (_iv_person) on posts and pages
+    foreach (array('post', 'page') as $ptype) {
+        register_post_meta($ptype, '_iv_person', array(
+            'show_in_rest'      => true,
+            'single'            => true,
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'auth_callback'     => function () {
+                return current_user_can('edit_posts');
+            },
+        ));
 
-    // 2. Interview Hero Role / Occupation (_iv_role) on posts
-    register_post_meta('post', '_iv_role', array(
-        'show_in_rest'      => true,
-        'single'             => true,
-        'type'               => 'string',
-        'sanitize_callback' => 'sanitize_text_field',
-        'auth_callback'     => function () {
-            return current_user_can('edit_posts');
-        },
-    ));
+        // 2. Interview Hero Role / Occupation (_iv_role) on posts and pages
+        register_post_meta($ptype, '_iv_role', array(
+            'show_in_rest'      => true,
+            'single'            => true,
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'auth_callback'     => function () {
+                return current_user_can('edit_posts');
+            },
+        ));
+    }
 
     // 3. Page Subtitle (_page_subtitle) on pages
     register_post_meta('page', '_page_subtitle', array(
@@ -142,15 +144,17 @@ add_action('init', 'quterma_register_editorial_meta');
  * Add editorial meta boxes in WP Admin
  */
 function quterma_add_editorial_meta_boxes() {
-    // Interview fields on posts
-    add_meta_box(
-        'quterma_interview_meta_box',
-        __('Параметры интервью (герой и должность)', 'quterma'),
-        'quterma_render_interview_meta_box',
-        'post',
-        'normal',
-        'high'
-    );
+    // Interview fields on posts and pages
+    foreach (array('post', 'page') as $screen) {
+        add_meta_box(
+            'quterma_interview_meta_box',
+            __('Параметры интервью (герой и должность)', 'quterma'),
+            'quterma_render_interview_meta_box',
+            $screen,
+            'normal',
+            'high'
+        );
+    }
 
     // Subtitle field on pages
     add_meta_box(
@@ -213,7 +217,7 @@ function quterma_save_editorial_meta($post_id) {
 
     // Save interview meta
     if (isset($_POST['quterma_interview_meta_nonce']) && wp_verify_nonce($_POST['quterma_interview_meta_nonce'], 'quterma_interview_meta_nonce_action')) {
-        if (current_user_can('edit_post', $post_id)) {
+        if (current_user_can('edit_post', $post_id) || current_user_can('edit_page', $post_id)) {
             if (isset($_POST['_iv_person'])) {
                 update_post_meta($post_id, '_iv_person', sanitize_text_field($_POST['_iv_person']));
             }
@@ -225,7 +229,7 @@ function quterma_save_editorial_meta($post_id) {
 
     // Save page subtitle meta
     if (isset($_POST['quterma_page_meta_nonce']) && wp_verify_nonce($_POST['quterma_page_meta_nonce'], 'quterma_page_meta_nonce_action')) {
-        if (current_user_can('edit_page', $post_id)) {
+        if (current_user_can('edit_post', $post_id) || current_user_can('edit_page', $post_id)) {
             if (isset($_POST['_page_subtitle'])) {
                 update_post_meta($post_id, '_page_subtitle', sanitize_text_field($_POST['_page_subtitle']));
             }
@@ -233,4 +237,21 @@ function quterma_save_editorial_meta($post_id) {
     }
 }
 add_action('save_post', 'quterma_save_editorial_meta');
+
+/**
+ * Enqueue Gutenberg Block Editor Sidebar assets
+ */
+function quterma_enqueue_block_editor_assets() {
+    $asset_path = get_template_directory() . '/assets/js/editor.js';
+    if (file_exists($asset_path)) {
+        wp_enqueue_script(
+            'quterma-editor-sidebar',
+            get_template_directory_uri() . '/assets/js/editor.js',
+            array('wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data'),
+            defined('QUTERMA_VERSION') ? QUTERMA_VERSION : '2.1.0',
+            true
+        );
+    }
+}
+add_action('enqueue_block_editor_assets', 'quterma_enqueue_block_editor_assets');
 

@@ -23,6 +23,8 @@ while (have_posts()) : the_post();
     $price     = get_post_meta($post_id, '_venue_price', true);
     $features  = get_post_meta($post_id, '_venue_features', true);
     $website   = get_post_meta($post_id, '_venue_website', true);
+    $phone     = get_post_meta($post_id, '_venue_phone', true);
+    $hours     = get_post_meta($post_id, '_venue_hours', true);
 
     // Other venues in this city
     $other_venues = new WP_Query(array(
@@ -63,6 +65,16 @@ while (have_posts()) : the_post();
           <?php if (!empty($price)) : ?>
             <div style="font-size:var(--t-xs);color:var(--ink-3);margin-top:4px">
               <?php esc_html_e('Чек:', 'quterma'); ?> <strong><?php echo esc_html($price); ?></strong>
+            </div>
+          <?php endif; ?>
+          <?php if (!empty($hours)) : ?>
+            <div style="font-size:var(--t-xs);color:var(--ink-3);margin-top:2px">
+              <?php esc_html_e('Часы работы:', 'quterma'); ?> <?php echo esc_html($hours); ?>
+            </div>
+          <?php endif; ?>
+          <?php if (!empty($phone)) : ?>
+            <div style="font-size:var(--t-xs);color:var(--ink-3);margin-top:2px">
+              <?php esc_html_e('Телефон:', 'quterma'); ?> <a href="tel:<?php echo esc_attr(preg_replace('/[^\d+]/', '', $phone)); ?>" style="color:inherit;text-decoration:underline"><?php echo esc_html($phone); ?></a>
             </div>
           <?php endif; ?>
         </div>

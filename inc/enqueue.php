@@ -174,3 +174,30 @@ function quterma_html_js_class() {
     echo "<script>document.documentElement.classList.add('js')</script>\n";
 }
 add_action('wp_head', 'quterma_html_js_class', 0);
+
+/**
+ * Preload critical WOFF2 local fonts to eliminate FOUT (Flash of Unstyled Text).
+ * High-priority link rel=preload starts font download simultaneously with HTML parsing,
+ * ensuring custom web fonts are cached and ready before first paint.
+ */
+function quterma_preload_critical_fonts() {
+    $theme_dir = get_template_directory();
+    $theme_uri = get_template_directory_uri();
+
+    $critical_fonts = array(
+        '/assets/fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-regular.woff2',
+        '/assets/fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-600.woff2',
+        '/assets/fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-700.woff2',
+    );
+
+    if (is_singular('post')) {
+        $critical_fonts[] = '/assets/fonts/pt-serif-v19-cyrillic_cyrillic-ext_latin_latin-ext-regular.woff2';
+    }
+
+    foreach ($critical_fonts as $font_rel) {
+        if (file_exists($theme_dir . $font_rel)) {
+            echo '<link rel="preload" href="' . esc_url($theme_uri . $font_rel) . '" as="font" type="font/woff2" crossorigin="anonymous">' . "\n";
+        }
+    }
+}
+add_action('wp_head', 'quterma_preload_critical_fonts', 1);

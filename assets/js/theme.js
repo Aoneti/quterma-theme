@@ -494,4 +494,37 @@
     });
   })();
 
+  // 10. TOP PERIOD SWITCHER (Читают сейчас: сегодня, вчера, неделя, месяц)
+  (function initTopPeriodSwitcher() {
+    var navs = document.querySelectorAll('.top-period-nav');
+    if (!navs.length) return;
+
+    navs.forEach(function (nav) {
+      var btns = nav.querySelectorAll('.top-period-btn');
+      var container = nav.closest('aside') || nav.parentElement;
+      btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var period = this.getAttribute('data-period');
+          btns.forEach(function (b) {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+          });
+          this.classList.add('active');
+          this.setAttribute('aria-selected', 'true');
+
+          if (container) {
+            var lists = container.querySelectorAll('.top-list');
+            lists.forEach(function (list) {
+              if (list.getAttribute('data-period') === period) {
+                list.style.display = 'flex';
+              } else if (list.getAttribute('data-period')) {
+                list.style.display = 'none';
+              }
+            });
+          }
+        });
+      });
+    });
+  })();
+
 })();

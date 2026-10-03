@@ -1,6 +1,8 @@
 <?php
 /**
- * Template Name: Интервью (Interview Archive Page)
+ * Template Name: Интервью (Материал или архив)
+ * Template Post Type: post, page
+ * Description: Универсальный шаблон интервью: для отдельных материалов-диалогов и для архивного раздела
  *
  * @package Quterma
  */
@@ -10,91 +12,214 @@ if (!defined('ABSPATH')) {
 }
 
 get_header();
+
+$current_id = get_the_ID();
+$iv_person  = get_post_meta($current_id, '_iv_person', true);
+$iv_role    = get_post_meta($current_id, '_iv_role', true);
+$sub        = get_post_meta($current_id, '_page_subtitle', true);
+$raw_content = get_post_field('post_content', $current_id);
+$has_substantive_content = !empty(trim(strip_tags($raw_content)));
+
+// Determine whether this page is a single interview material or a listing archive
+$is_single_interview = $has_substantive_content || !empty($iv_person) || !empty($iv_role) || (is_singular('post'));
 ?>
 
 <div class="wrap">
   <div style="padding-top:28px">
     <?php get_template_part('template-parts/breadcrumbs'); ?>
 
-    <div class="page-header">
-      <h1 class="page-title"><?php esc_html_e('Интервью', 'quterma'); ?></h1>
+    <div class="page-header" style="max-width:860px">
+      <div class="article-kicker" style="display:inline-block;padding:4px 10px;background:var(--accent);color:#fff;font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;margin-bottom:12px">
+        <?php esc_html_e('Интервью', 'quterma'); ?>
+      </div>
+      <h1 class="page-title" style="margin-bottom:12px"><?php the_title(); ?></h1>
+
+      <?php if (!empty($iv_person) || !empty($iv_role)) : ?>
+        <div class="interview-person-hero" style="margin-top:16px;margin-bottom:20px;padding:16px 20px;background:var(--paper-2);border-left:4px solid var(--brand);border-radius:3px">
+          <div style="font-family:var(--fs);font-size:24px;font-weight:700;color:var(--ink);line-height:1.2">
+            <?php echo esc_html(!empty($iv_person) ? $iv_person : get_the_title()); ?>
+          </div>
+          <?php if (!empty($iv_role)) : ?>
+            <div style="font-family:var(--fd);font-size:var(--t-xs);color:var(--ink-3);margin-top:4px;font-weight:600;letter-spacing:.02em">
+              <?php echo esc_html($iv_role); ?>
+            </div>
+          <?php endif; ?>
+        </div>
+      <?php elseif (!empty($sub) || has_excerpt()) : ?>
+        <p class="page-subtitle" style="font-size:var(--t-md);color:var(--ink-2);line-height:1.5">
+          <?php echo esc_html(!empty($sub) ? $sub : get_the_excerpt()); ?>
+        </p>
+      <?php endif; ?>
     </div>
   </div>
 
-  <?php
-  $paged = max(1, (int) get_query_var('paged'), (int) get_query_var('page'));
-  $args = array(
-      'post_type'      => 'post',
-      'post_status'    => 'publish',
-      'posts_per_page' => 12,
-      'paged'          => $paged,
-      'category_name'  => 'interview,interviews,intervyu',
-  );
-
-  $iv_archive_query = new WP_Query($args);
-  ?>
-
-  <div class="main-layout" style="margin-bottom:24px;padding-bottom:72px">
-    <main>
-      <?php if ($iv_archive_query->have_posts()) : ?>
-        <div class="interview-grid rev" style="grid-template-columns:1fr 1fr;gap:22px">
-          <?php while ($iv_archive_query->have_posts()) : $iv_archive_query->the_post();
-            $custom_person = get_post_meta(get_the_ID(), '_iv_person', true);
-            $person_name   = !empty($custom_person) ? $custom_person : get_the_title();
-            $custom_role   = get_post_meta(get_the_ID(), '_iv_role', true);
-          ?>
-            <a href="<?php the_permalink(); ?>" class="iv-card">
-              <div class="iv-media">
-                <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
-                <?php if (has_post_thumbnail()) : ?>
-                  <div style="aspect-ratio:1/1;overflow:hidden">
-                    <?php the_post_thumbnail('quterma-card-4x3', array(
-                        'loading' => 'lazy',
-                        'sizes'   => '(max-width: 768px) 100vw, 420px',
-                        'alt'     => the_title_attribute(array('echo' => false)),
-                    )); ?>
-                  </div>
-                <?php else : ?>
-                  <div class="ph-img" style="aspect-ratio:1/1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
-                <?php endif; ?>
-              </div>
-              <div class="iv-body">
-                <div class="iv-person"><?php echo esc_html($person_name); ?></div>
-                <?php if (!empty($custom_role)) : ?>
-                  <div class="iv-role"><?php echo esc_html($custom_role); ?></div>
-                <?php endif; ?>
-                <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 18, '…'); ?></p>
-                <div class="iv-meta">
-                  <span><?php echo quterma_time_tag(get_the_ID(), false); ?></span>
-                  <span class="iv-meta-cta"><?php esc_html_e('Читать диалог →', 'quterma'); ?></span>
-                </div>
-              </div>
-            </a>
-          <?php endwhile; wp_reset_postdata(); ?>
-        </div>
-
-        <div style="margin-top:40px">
-          <?php get_template_part('template-parts/pagination', null, array(
-              'total_pages' => $iv_archive_query->max_num_pages,
-              'current'     => $paged,
+  <?php if ($is_single_interview) : ?>
+    <!-- 1. ИНДИВИДУАЛЬНЫЙ МАТЕРИАЛ ИНТЕРВЬЮ -->
+    <div class="wrap" style="padding-bottom:32px">
+      <?php if (has_post_thumbnail()) : ?>
+        <figure class="article-wide" style="margin-top:10px;margin-bottom:28px;max-width:860px">
+          <?php the_post_thumbnail('quterma-hero', array(
+              'loading' => 'eager',
+              'sizes'   => '(max-width: 860px) 100vw, 860px',
+              'alt'     => the_title_attribute(array('echo' => false)),
           )); ?>
-        </div>
-      <?php else : ?>
-        <div class="empty-state show">
-          <div class="empty-state-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
-          </div>
-          <p class="empty-state-text"><?php esc_html_e('В разделе «Интервью» пока нет опубликованных материалов.', 'quterma'); ?></p>
-          <a href="<?php echo esc_url(quterma_get_news_url()); ?>" class="empty-state-btn"><?php esc_html_e('Перейти в общую ленту', 'quterma'); ?></a>
-        </div>
+          <?php
+          $thumb_id = get_post_thumbnail_id();
+          $caption  = wp_get_attachment_caption($thumb_id);
+          if (!empty($caption)) : ?>
+            <figcaption style="font-size:var(--t-xs);color:var(--ink-4);margin-top:8px;font-style:italic">
+              <?php echo esc_html($caption); ?>
+            </figcaption>
+          <?php endif; ?>
+        </figure>
       <?php endif; ?>
-    </main>
 
-    <aside class="sidebar">
-      <?php get_template_part('template-parts/sidebar-popular'); ?>
-      <?php get_template_part('template-parts/sidebar-tags'); ?>
-    </aside>
-  </div>
+      <?php while (have_posts()) : the_post(); ?>
+        <div class="article-col article-body rev" style="max-width:860px">
+          <?php the_content(); ?>
+        </div>
+      <?php endwhile; wp_reset_postdata(); ?>
+    </div>
+
+    <!-- ДРУГИЕ ИНТЕРВЬЮ ВЫПУСКА -->
+    <?php
+    $other_args = array(
+        'post_type'      => array('post', 'page'),
+        'post_status'    => 'publish',
+        'posts_per_page' => 4,
+        'post__not_in'   => array($current_id),
+        'tax_query'      => array(
+            'relation' => 'OR',
+            array(
+                'taxonomy' => 'category',
+                'field'    => 'slug',
+                'terms'    => array('interview', 'interviews', 'intervyu'),
+            ),
+        ),
+    );
+    $other_query = new WP_Query($other_args);
+    if ($other_query->have_posts()) : ?>
+      <div class="main-layout" style="margin-top:40px;margin-bottom:48px;padding-top:24px;border-top:1px solid var(--bd)">
+        <main>
+          <div class="sec-div" style="margin-top:0">
+            <div class="sec-div-acc"></div>
+            <h2 class="sec-div-title"><?php esc_html_e('Ещё интервью', 'quterma'); ?></h2>
+            <div class="sec-div-line"></div>
+          </div>
+          <div class="interview-grid rev" style="grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:20px">
+            <?php while ($other_query->have_posts()) : $other_query->the_post();
+              $p_person = get_post_meta(get_the_ID(), '_iv_person', true);
+              $p_name   = !empty($p_person) ? $p_person : get_the_title();
+              $p_role   = get_post_meta(get_the_ID(), '_iv_role', true);
+            ?>
+              <a href="<?php the_permalink(); ?>" class="iv-card">
+                <div class="iv-media">
+                  <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
+                  <?php if (has_post_thumbnail()) : ?>
+                    <div style="aspect-ratio:1/1;overflow:hidden">
+                      <?php the_post_thumbnail('quterma-card-4x3', array(
+                          'loading' => 'lazy',
+                          'sizes'   => '(max-width: 768px) 100vw, 360px',
+                          'alt'     => the_title_attribute(array('echo' => false)),
+                      )); ?>
+                    </div>
+                  <?php else : ?>
+                    <div class="ph-img" style="aspect-ratio:1/1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+                  <?php endif; ?>
+                </div>
+                <div class="iv-body">
+                  <div class="iv-person"><?php echo esc_html($p_name); ?></div>
+                  <?php if (!empty($p_role)) : ?>
+                    <div class="iv-role"><?php echo esc_html($p_role); ?></div>
+                  <?php endif; ?>
+                  <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 15, '…'); ?></p>
+                </div>
+              </a>
+            <?php endwhile; wp_reset_postdata(); ?>
+          </div>
+        </main>
+      </div>
+    <?php endif; ?>
+
+  <?php else : ?>
+    <!-- 2. АРХИВНЫЙ РАЗДЕЛ ВСЕХ ИНТЕРВЬЮ -->
+    <?php
+    $paged = max(1, (int) get_query_var('paged'), (int) get_query_var('page'));
+    $args = array(
+        'post_type'      => 'post',
+        'post_status'    => 'publish',
+        'posts_per_page' => 12,
+        'paged'          => $paged,
+        'category_name'  => 'interview,interviews,intervyu',
+    );
+    $iv_archive_query = new WP_Query($args);
+    ?>
+
+    <div class="main-layout" style="margin-bottom:24px;padding-bottom:72px">
+      <main>
+        <?php if ($iv_archive_query->have_posts()) : ?>
+          <div class="interview-grid rev" style="grid-template-columns:1fr 1fr;gap:22px">
+            <?php while ($iv_archive_query->have_posts()) : $iv_archive_query->the_post();
+              $custom_person = get_post_meta(get_the_ID(), '_iv_person', true);
+              $person_name   = !empty($custom_person) ? $custom_person : get_the_title();
+              $custom_role   = get_post_meta(get_the_ID(), '_iv_role', true);
+            ?>
+              <a href="<?php the_permalink(); ?>" class="iv-card">
+                <div class="iv-media">
+                  <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
+                  <?php if (has_post_thumbnail()) : ?>
+                    <div style="aspect-ratio:1/1;overflow:hidden">
+                      <?php the_post_thumbnail('quterma-card-4x3', array(
+                          'loading' => 'lazy',
+                          'sizes'   => '(max-width: 768px) 100vw, 420px',
+                          'alt'     => the_title_attribute(array('echo' => false)),
+                      )); ?>
+                    </div>
+                  <?php else : ?>
+                    <div class="ph-img" style="aspect-ratio:1/1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+                  <?php endif; ?>
+                </div>
+                <div class="iv-body">
+                  <div class="iv-person"><?php echo esc_html($person_name); ?></div>
+                  <?php if (!empty($custom_role)) : ?>
+                    <div class="iv-role"><?php echo esc_html($custom_role); ?></div>
+                  <?php endif; ?>
+                  <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 18, '…'); ?></p>
+                  <div class="iv-meta">
+                    <span><?php echo quterma_time_tag(get_the_ID(), false); ?></span>
+                    <span class="iv-meta-cta"><?php esc_html_e('Читать диалог →', 'quterma'); ?></span>
+                  </div>
+                </div>
+              </a>
+            <?php endwhile; wp_reset_postdata(); ?>
+          </div>
+
+          <div style="margin-top:40px">
+            <?php get_template_part('template-parts/pagination', null, array(
+                'total_pages' => $iv_archive_query->max_num_pages,
+                'current'     => $paged,
+            )); ?>
+          </div>
+        <?php else : ?>
+          <div class="empty-state show">
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+            </div>
+            <p class="empty-state-text"><?php esc_html_e('В разделе «Интервью» пока нет опубликованных материалов.', 'quterma'); ?></p>
+            <p style="font-size:var(--t-xs);color:var(--ink-3);max-width:440px;margin:8px auto 16px auto">
+              <?php esc_html_e('Чтобы опубликовать диалог, создайте запись в рубрике «Интервью» или выберите шаблон «Интервью» в атрибутах записи.', 'quterma'); ?>
+            </p>
+            <a href="<?php echo esc_url(quterma_get_news_url()); ?>" class="empty-state-btn"><?php esc_html_e('Перейти в общую ленту', 'quterma'); ?></a>
+          </div>
+        <?php endif; ?>
+      </main>
+
+      <aside class="sidebar">
+        <?php get_template_part('template-parts/sidebar-popular'); ?>
+        <?php get_template_part('template-parts/sidebar-tags'); ?>
+      </aside>
+    </div>
+  <?php endif; ?>
 </div>
 
 <?php

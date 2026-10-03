@@ -64,9 +64,7 @@ $feed_url         = quterma_get_news_url();
       <!-- ФИЛЬТРЫ РУБРИК ЛЕНТЫ -->
       <div class="filters">
         <button type="button" class="filter active" data-filter="all"><?php esc_html_e('Все', 'quterma'); ?></button>
-        <button type="button" class="filter" data-filter="city"><?php esc_html_e('Город', 'quterma'); ?></button>
         <button type="button" class="filter" data-filter="improvement"><?php esc_html_e('Благоустройство', 'quterma'); ?></button>
-        <button type="button" class="filter" data-filter="heritage"><?php esc_html_e('Наследие', 'quterma'); ?></button>
       </div>
 
       <!-- СПИСОК НОВОСТЕЙ -->
@@ -80,15 +78,11 @@ $feed_url         = quterma_get_news_url();
                 $date_str  = quterma_format_date(get_the_ID(), true);
                 $is_lead   = ($feed_count === 1);
                 $post_tags = get_the_tags();
-                $filter_cat = 'city';
+                $filter_cat = 'all';
                 if ($post_tags) {
                     foreach ($post_tags as $t) {
-                        if (in_array(strtolower($t->slug), array('blagoustroystvo', 'improvement', 'remont'))) {
+                        if (in_array(strtolower($t->slug), array('blagoustroystvo', 'improvement', 'remont', 'blag'))) {
                             $filter_cat = 'improvement';
-                            break;
-                        }
-                        if (in_array(strtolower($t->slug), array('nasledie', 'heritage', 'istoriya', 'unesco'))) {
-                            $filter_cat = 'heritage';
                             break;
                         }
                     }

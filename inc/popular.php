@@ -137,7 +137,104 @@ function quterma_get_popular_posts($limit = 5) {
 }
 
 /**
- * Flush popular posts transient when a post is saved or deleted.
+ * Get popular posts by specific time period.
+ *
+ * @param string $period 'today' | 'yesterday' | 'week' | 'month'
+ * @param int $limit Number of posts to return (default 5).
+ * @return WP_Post[] Array of post objects.
+ */
+function quterma_get_popular_posts_by_period($period = 'today', $limit = 5) {
+    $cache_key = 'quterma_pop_' . sanitize_key($period) . '_' . (int) $limit;
+    $results   = get_transient($cache_key);
+
+    if (false !== $results && is_array($results)) {
+        return $results;
+    }
+
+    $date_query = array();
+    switch ($period) {
+        case 'yesterday':
+            $date_query = array(
+                array(
+                    'after'     => 'yesterday 00:00:00',
+                    'before'    => 'today 00:00:00',
+                    'inclusive' => true,
+                ),
+            );
+            break;
+        case 'week':
+            $date_query = array(
+                array(
+                    'after'     => '7 days ago',
+                    'inclusive' => true,
+                ),
+            );
+            break;
+        case 'month':
+            $date_query = array(
+                array(
+                    'after'     => '30 days ago',
+                    'inclusive' => true,
+                ),
+            );
+            break;
+        case 'today':
+        default:
+            $date_query = array(
+                array(
+                    'after'     => 'today 00:00:00',
+                    'inclusive' => true,
+                ),
+            );
+            break;
+    }
+
+    // 1. Try to find posts with view counts in the selected period
+    $args = array(
+        'post_type'              => 'post',
+        'post_status'            => 'publish',
+        'posts_per_page'         => $limit,
+        'ignore_sticky_posts'    => true,
+        'meta_key'               => QUTERMA_VIEWS_META_KEY,
+        'orderby'                => 'meta_value_num date',
+        'order'                  => 'DESC',
+        'date_query'             => $date_query,
+        'no_found_rows'          => true,
+        'update_post_term_cache' => false,
+    );
+    $query = new WP_Query($args);
+    $results = $query->posts;
+
+    // 2. If view counts aren't set yet, fallback to recent posts in that period
+    if (empty($results) || count($results) < $limit) {
+        $needed = $limit - count($results);
+        $exclude_ids = wp_list_pluck($results, 'ID');
+        $fallback_args = array(
+            'post_type'              => 'post',
+            'post_status'            => 'publish',
+            'posts_per_page'         => $needed,
+            'post__not_in'           => $exclude_ids,
+            'ignore_sticky_posts'    => true,
+            'orderby'                => 'date',
+            'order'                  => 'DESC',
+            'date_query'             => $date_query,
+            'no_found_rows'          => true,
+            'update_post_term_cache' => false,
+        );
+        $fallback_query = new WP_Query($fallback_args);
+        if ($fallback_query->have_posts()) {
+            $results = array_merge($results, $fallback_query->posts);
+        }
+    }
+
+    // Cache results for 10 minutes
+    set_transient($cache_key, $results, 10 * MINUTE_IN_SECONDS);
+
+    return $results;
+}
+
+/**
+ * Flush popular posts transients when a post is saved or deleted.
  */
 function quterma_flush_popular_cache($post_id) {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
@@ -145,6 +242,10 @@ function quterma_flush_popular_cache($post_id) {
     }
     delete_transient(QUTERMA_POPULAR_TRANSIENT . '_5');
     delete_transient(QUTERMA_POPULAR_TRANSIENT . '_10');
+    foreach (array('today', 'yesterday', 'week', 'month') as $p) {
+        delete_transient('quterma_pop_' . $p . '_5');
+        delete_transient('quterma_pop_' . $p . '_10');
+    }
 }
 add_action('save_post', 'quterma_flush_popular_cache');
 add_action('deleted_post', 'quterma_flush_popular_cache');
