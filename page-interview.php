@@ -29,26 +29,23 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
     <?php get_template_part('template-parts/breadcrumbs'); ?>
 
     <div class="page-header" style="max-width:860px">
-      <div class="article-kicker" style="display:inline-block;padding:4px 10px;background:var(--accent);color:#fff;font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;margin-bottom:12px">
-        <?php esc_html_e('Интервью', 'quterma'); ?>
-      </div>
+      <?php if ($is_single_interview && mb_strtolower(trim(get_the_title()), 'UTF-8') !== 'интервью') : ?>
+        <div class="article-kicker kicker-interview">
+          <?php esc_html_e('Интервью', 'quterma'); ?>
+        </div>
+      <?php endif; ?>
       <h1 class="page-title" style="margin-bottom:12px"><?php the_title(); ?></h1>
 
-      <?php if (!empty($iv_person) || !empty($iv_role)) : ?>
-        <div class="interview-person-hero" style="margin-top:16px;margin-bottom:20px;padding:16px 20px;background:var(--paper-2);border-left:4px solid var(--brand);border-radius:3px">
-          <div style="font-family:var(--fs);font-size:24px;font-weight:700;color:var(--ink);line-height:1.2">
-            <?php echo esc_html(!empty($iv_person) ? $iv_person : get_the_title()); ?>
-          </div>
+      <?php if ($is_single_interview && (!empty($iv_person) || !empty($iv_role))) : 
+          $display_person = !empty($iv_person) ? $iv_person : get_the_title();
+      ?>
+        <div class="interview-person-hero">
+          <div class="iv-hero-badge"><?php esc_html_e('Герой интервью', 'quterma'); ?></div>
+          <div class="iv-hero-name"><?php echo esc_html($display_person); ?></div>
           <?php if (!empty($iv_role)) : ?>
-            <div style="font-family:var(--fd);font-size:var(--t-xs);color:var(--ink-3);margin-top:4px;font-weight:600;letter-spacing:.02em">
-              <?php echo esc_html($iv_role); ?>
-            </div>
+            <div class="iv-hero-role"><?php echo esc_html($iv_role); ?></div>
           <?php endif; ?>
         </div>
-      <?php elseif (!empty($sub) || has_excerpt()) : ?>
-        <p class="page-subtitle" style="font-size:var(--t-md);color:var(--ink-2);line-height:1.5">
-          <?php echo esc_html(!empty($sub) ? $sub : get_the_excerpt()); ?>
-        </p>
       <?php endif; ?>
     </div>
   </div>
@@ -56,18 +53,19 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
   <?php if ($is_single_interview) : ?>
     <!-- 1. ИНДИВИДУАЛЬНЫЙ МАТЕРИАЛ ИНТЕРВЬЮ -->
     <div class="wrap" style="padding-bottom:32px">
-      <?php if (has_post_thumbnail()) : ?>
+      <?php if (has_post_thumbnail()) : 
+          $thumb_id  = get_post_thumbnail_id();
+          $photo_alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);
+          $caption   = wp_get_attachment_caption($thumb_id);
+      ?>
         <figure class="article-wide" style="margin-top:10px;margin-bottom:28px;max-width:860px">
           <?php the_post_thumbnail('quterma-hero', array(
               'loading' => 'eager',
               'sizes'   => '(max-width: 860px) 100vw, 860px',
-              'alt'     => the_title_attribute(array('echo' => false)),
+              'alt'     => !empty($photo_alt) ? $photo_alt : (!empty($caption) ? $caption : ''),
           )); ?>
-          <?php
-          $thumb_id = get_post_thumbnail_id();
-          $caption  = wp_get_attachment_caption($thumb_id);
-          if (!empty($caption)) : ?>
-            <figcaption style="font-size:var(--t-xs);color:var(--ink-4);margin-top:8px;font-style:italic">
+          <?php if (!empty($caption)) : ?>
+            <figcaption style="font-size:13.5px;color:var(--ink-3);margin-top:10px;font-style:italic;line-height:1.5;text-align:left;border-left:2px solid var(--bd);padding-left:12px">
               <?php echo esc_html($caption); ?>
             </figcaption>
           <?php endif; ?>
@@ -120,7 +118,7 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
                       <?php the_post_thumbnail('quterma-card-4x3', array(
                           'loading' => 'lazy',
                           'sizes'   => '(max-width: 768px) 100vw, 360px',
-                          'alt'     => the_title_attribute(array('echo' => false)),
+                          'alt'     => '',
                       )); ?>
                     </div>
                   <?php else : ?>
@@ -172,7 +170,7 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
                       <?php the_post_thumbnail('quterma-card-4x3', array(
                           'loading' => 'lazy',
                           'sizes'   => '(max-width: 768px) 100vw, 420px',
-                          'alt'     => the_title_attribute(array('echo' => false)),
+                          'alt'     => '',
                       )); ?>
                     </div>
                   <?php else : ?>

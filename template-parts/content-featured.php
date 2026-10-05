@@ -22,7 +22,7 @@ if (empty($excerpt)) {
       <?php the_post_thumbnail('quterma-featured', array(
           'loading' => 'lazy',
           'sizes'   => '(max-width: 768px) 100vw, 720px',
-          'alt'     => the_title_attribute(array('echo' => false)),
+          'alt'     => '',
       )); ?>
     <?php else : ?>
       <?php echo quterma_placeholder_img(38, 38); ?>
@@ -31,7 +31,7 @@ if (empty($excerpt)) {
   <div class="nc-body">
     <span class="sr-only"><?php echo esc_html($cat_info['name']); ?></span>
     <h3 class="nc-title">
-      <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+      <a href="<?php the_permalink(); ?>" class="card-permalink"><?php the_title(); ?></a>
     </h3>
     <p class="nc-excerpt"><?php echo esc_html($excerpt); ?></p>
     <div class="nc-meta"><?php echo quterma_time_tag(get_the_ID(), true); ?></div>

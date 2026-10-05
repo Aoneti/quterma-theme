@@ -46,34 +46,39 @@ function quterma_format_date($post = null, $with_time = false) {
         return '';
     }
     $now_dt = current_datetime();
-    $diff_seconds = $now_dt->getTimestamp() - $post_dt->getTimestamp();
-    $diff_days = (int) floor($diff_seconds / DAY_IN_SECONDS);
+    $same_year = ($now_dt->format('Y') === $post_dt->format('Y'));
 
-    $time_str = wp_date('H:i', $post_dt->getTimestamp(), wp_timezone());
-
-    // Same calendar day
-    if ($post_dt->format('Y-m-d') === $now_dt->format('Y-m-d')) {
-        return $with_time ? sprintf(__('Сегодня, %s', 'quterma'), $time_str) : __('Сегодня', 'quterma');
+    if ($with_time) {
+        return $same_year
+            ? wp_date('j F, H:i', $post_dt->getTimestamp(), wp_timezone())
+            : wp_date('j F Y, H:i', $post_dt->getTimestamp(), wp_timezone());
     }
 
-    // Yesterday
-    $yesterday_dt = $now_dt->modify('-1 day');
-    if ($post_dt->format('Y-m-d') === $yesterday_dt->format('Y-m-d')) {
-        return $with_time ? sprintf(__('Вчера, %s', 'quterma'), $time_str) : __('Вчера', 'quterma');
-    }
+    return $same_year
+        ? wp_date('j F', $post_dt->getTimestamp(), wp_timezone())
+        : wp_date('j F Y', $post_dt->getTimestamp(), wp_timezone());
+}
 
-    // 2-6 days ago (with correct Russian plurals: 2 дня назад, 5 дней назад)
-    if ($diff_days >= 2 && $diff_days <= 6) {
-        $day_word = quterma_plural($diff_days, array('день', 'дня', 'дней'));
-        return sprintf(__('%d %s назад', 'quterma'), $diff_days, $day_word);
+/**
+ * Calculate estimated reading time for longreads and articles
+ *
+ * @param WP_Post|int|null $post
+ * @return string
+ */
+function quterma_reading_time($post = null) {
+    $post_obj = get_post($post);
+    if (!$post_obj) {
+        return '5 минут чтения';
     }
-
-    // Default formatted Russian date
-    if ($now_dt->format('Y') === $post_dt->format('Y')) {
-        return wp_date('j F', $post_dt->getTimestamp(), wp_timezone());
+    $content = strip_tags($post_obj->post_content);
+    $word_count = count(preg_split('/\s+/u', trim($content), -1, PREG_SPLIT_NO_EMPTY));
+    if ($word_count < 100) {
+        $minutes = 3;
+    } else {
+        $minutes = max(2, (int) round($word_count / 180));
     }
-
-    return wp_date('j F Y', $post_dt->getTimestamp(), wp_timezone());
+    $word = quterma_plural($minutes, array('минута', 'минуты', 'минут'));
+    return sprintf('%d %s чтения', $minutes, $word);
 }
 
 /**
@@ -133,9 +138,56 @@ if (!function_exists('quterma_get_city_name')) {
 }
 
 /**
+ * Check if a category term is a technical/placement service category (e.g. "Все новости", "Карусель", "Лента")
+ *
+ * @param WP_Term|int $cat
+ * @return bool
+ */
+function quterma_is_technical_category($cat) {
+    if (is_numeric($cat)) {
+        $cat = get_term($cat, 'category');
+    }
+    if (!$cat || is_wp_error($cat)) {
+        return true;
+    }
+
+    // Technical slugs
+    $service_slugs = array(
+        'carousel', 'karusel', 'lenta', 'feed', 'featured', 'specials', 'popular',
+        'news', 'all-news', 'vse-novosti', 'vsenovosti', 'novosti',
+    );
+    $slug_clean = strtolower(trim($cat->slug));
+    if (in_array($slug_clean, $service_slugs, true)) {
+        return true;
+    }
+
+    // Decoded cyrillic slugs
+    $decoded_slug = strtolower(trim(urldecode($cat->slug)));
+    if (in_array($decoded_slug, array('карусель', 'лента', 'новости', 'все-новости', 'всеновости', 'все новости', 'лента-новостей'), true)) {
+        return true;
+    }
+
+    // Normalized Russian term names
+    $name_clean = function_exists('mb_strtolower') ? mb_strtolower(trim($cat->name), 'UTF-8') : strtolower(trim($cat->name));
+    $tech_names = array('все новости', 'новости', 'лента', 'карусель', 'спецпроекты', 'популярное', 'все-новости', 'лента новостей');
+    if (in_array($name_clean, $tech_names, true)) {
+        return true;
+    }
+
+    // Alphanumeric normalized check (strips punctuation and spaces)
+    $normalized_name = preg_replace('/[^a-z0-9а-я]/ui', '', str_replace('ё', 'е', $name_clean));
+    $tech_normalized = array('всеновости', 'новости', 'лента', 'карусель', 'спецпроекты', 'популярное', 'allnews', 'vsenovosti');
+    if (in_array($normalized_name, $tech_normalized, true)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Get primary editorial category for a post.
- * Excludes technical and placement service categories like 'carousel', 'lenta', etc.
- * Supports Yoast SEO and Rank Math primary category if configured.
+ * Excludes technical and placement service categories like 'carousel', 'lenta', and 'all-news' ('Все новости').
+ * Supports Yoast SEO and Rank Math primary category if configured (ignoring technical categories).
  *
  * @param int|WP_Post|null $post
  * @return WP_Term|null
@@ -146,20 +198,20 @@ function quterma_get_primary_category($post = null) {
         return null;
     }
 
-    // 1. Check Yoast SEO primary category
+    // 1. Check Yoast SEO primary category (must not be technical)
     $yoast_primary_id = get_post_meta($post->ID, '_yoast_wpseo_primary_category', true);
     if ($yoast_primary_id) {
         $term = get_term($yoast_primary_id, 'category');
-        if ($term && !is_wp_error($term)) {
+        if ($term && !is_wp_error($term) && !quterma_is_technical_category($term)) {
             return $term;
         }
     }
 
-    // 2. Check Rank Math primary term
+    // 2. Check Rank Math primary term (must not be technical)
     $rm_primary_id = get_post_meta($post->ID, 'rank_math_primary_category', true);
     if ($rm_primary_id) {
         $term = get_term($rm_primary_id, 'category');
-        if ($term && !is_wp_error($term)) {
+        if ($term && !is_wp_error($term) && !quterma_is_technical_category($term)) {
             return $term;
         }
     }
@@ -169,17 +221,17 @@ function quterma_get_primary_category($post = null) {
         return null;
     }
 
-    // Exclude placement/service categories
-    $service_slugs = array('carousel', 'karusel', 'lenta', 'feed', 'featured', 'specials', 'popular');
+    // Exclude placement/service and technical categories ("Все новости", "Карусель", etc.)
     $editorial_cats = array();
     foreach ($cats as $cat) {
-        if (!in_array(strtolower($cat->slug), $service_slugs, true)) {
+        if (!quterma_is_technical_category($cat)) {
             $editorial_cats[] = $cat;
         }
     }
 
+    // If post has no editorial categories, return null (never force "Все новости")
     if (empty($editorial_cats)) {
-        return $cats[0];
+        return null;
     }
 
     // Sort by taxonomy depth (deepest child category first)
@@ -222,7 +274,7 @@ function quterma_get_page_url($slug, $fallback = null) {
         return $url;
     }
 
-    // 2. Check if a WordPress Category exists with this slug (e.g. culture, people, history, news)
+    // 2. Check if a WordPress Category exists with this slug (e.g. culture, people, history)
     $cat = get_category_by_slug($slug);
     if ($cat) {
         $url = get_category_link($cat);
@@ -250,25 +302,32 @@ add_action('saved_term', function ($term_id, $tt_id, $taxonomy) {
 
 /**
  * Get dynamic URL for posts archive (Все новости / Лента)
- * Checks Category 'news', page_for_posts, Page 'news', or fallback to /category/news/
+ * Primary source: standard WordPress Page for Posts (get_option('page_for_posts')).
+ * Does NOT use category 'news' — "Все новости" is a posts page aggregator, not a rubric.
+ *
+ * @return string
  */
 function quterma_get_news_url() {
-    $cat = get_category_by_slug('news');
-    if ($cat) {
-        return get_category_link($cat);
-    }
-    $page_for_posts = get_option('page_for_posts');
-    if ($page_for_posts) {
-        $p = get_post($page_for_posts);
-        if ($p && $p->post_status === 'publish') {
+    // 1. Check standard WordPress Page for Posts setting
+    $page_for_posts = (int) get_option('page_for_posts');
+    if ($page_for_posts > 0) {
+        $page_obj = get_post($page_for_posts);
+        if ($page_obj && $page_obj->post_status === 'publish') {
             return get_permalink($page_for_posts);
         }
     }
-    $page = get_page_by_path('news');
-    if ($page && $page->post_status === 'publish') {
-        return get_permalink($page);
+
+    // 2. Fallback: check if a published Page with slug 'news', 'all-news', or 'vse-novosti' exists
+    $candidates = array('news', 'all-news', 'vse-novosti');
+    foreach ($candidates as $slug) {
+        $page = get_page_by_path($slug);
+        if ($page && $page->post_status === 'publish') {
+            return get_permalink($page);
+        }
     }
-    return home_url('/category/news/');
+
+    // 3. Fallback: clean URL to /news/ on current site
+    return home_url('/news/');
 }
 
 /**
@@ -482,11 +541,14 @@ function quterma_default_desktop_nav() {
         array('title' => __('События', 'quterma'), 'url' => quterma_get_page_url('events', home_url('/events/'))),
     );
 
+    $news_url    = quterma_get_news_url();
     $current_url = home_url(add_query_arg(array(), $GLOBALS['wp']->request));
 
     foreach ($links as $link) {
         $is_active = (trailingslashit($current_url) === trailingslashit($link['url']));
         if (is_front_page() && $link['title'] === __('Главная', 'quterma')) {
+            $is_active = true;
+        } elseif (is_home() && $link['url'] === $news_url) {
             $is_active = true;
         }
         $class = 'nav-pill' . ($is_active ? ' active' : '');
@@ -511,11 +573,14 @@ function quterma_default_mobile_nav() {
         array('title' => __('События', 'quterma'), 'url' => quterma_get_page_url('events', home_url('/events/'))),
     );
 
+    $news_url    = quterma_get_news_url();
     $current_url = home_url(add_query_arg(array(), $GLOBALS['wp']->request));
 
     foreach ($links as $link) {
         $is_active = (trailingslashit($current_url) === trailingslashit($link['url']));
         if (is_front_page() && $link['title'] === __('Главная', 'quterma')) {
+            $is_active = true;
+        } elseif (is_home() && $link['url'] === $news_url) {
             $is_active = true;
         }
         $class = 'mob-nav-item' . ($is_active ? ' active' : '');
@@ -523,3 +588,60 @@ function quterma_default_mobile_nav() {
         echo '<a href="' . esc_url($link['url']) . '" class="' . esc_attr($class) . '"' . $current_attr . '>' . esc_html($link['title']) . '</a>';
     }
 }
+
+/**
+ * Safely highlight search terms in text
+ *
+ * @param string $text
+ * @param string $query
+ * @return string
+ */
+function quterma_highlight($text, $query) {
+    if (empty($query) || empty($text)) {
+        return esc_html($text);
+    }
+    $escaped_text = esc_html($text);
+    $escaped_query = trim($query);
+    $words = array_filter(preg_split('/\s+/u', $escaped_query));
+    if (empty($words)) {
+        return $escaped_text;
+    }
+    $patterns = array_map(function ($w) {
+        return preg_quote(esc_html($w), '/');
+    }, $words);
+    $pattern = '/(' . implode('|', $patterns) . ')/iu';
+    return preg_replace($pattern, '<mark class="srch-hl">$1</mark>', $escaped_text);
+}
+
+/**
+ * Russian Typographer helper to eliminate hanging prepositions and orphan words (WCAG / Editorial rule)
+ *
+ * @param string $text
+ * @return string
+ */
+function quterma_typograf($text) {
+    if (empty($text) || !is_string($text)) {
+        return $text;
+    }
+
+    // 1. Single and two-letter prepositions and conjunctions bound to following word
+    $short_words = 'в|во|и|на|с|со|по|к|ко|о|об|обо|от|ото|из|изо|за|до|у|около|не|ни|но|да|или|как|так|что|где|для|при|без|под|подо|над|надо|про|через';
+    $pattern1 = '/(?<=\s|^)(' . $short_words . ')\s+/iu';
+    $text = preg_replace($pattern1, '$1&nbsp;', $text);
+
+    // 2. Bound particles to preceding word
+    $pattern2 = '/\s+(ли|ль|же|ж|бы|б)([\s\.,!?;:\)»]|$)/iu';
+    $text = preg_replace($pattern2, '&nbsp;$1$2', $text);
+
+    // 3. Em-dash with non-breaking space before
+    $text = preg_replace('/\s+([—–])\s+/u', '&nbsp;$1 ', $text);
+
+    // 4. Numbers followed by abbreviations / units (e.g. 2026 год, 5 минут, 10 км)
+    $text = preg_replace('/(\d+)\s+(год|года|году|годом|годах|г\.|г|мин|минут|минуты|руб|рублей|р\.|км|м|чел)\b/iu', '$1&nbsp;$2', $text);
+
+    return $text;
+}
+add_filter('the_title', 'quterma_typograf', 10);
+add_filter('the_excerpt', 'quterma_typograf', 10);
+add_filter('single_post_title', 'quterma_typograf', 10);
+

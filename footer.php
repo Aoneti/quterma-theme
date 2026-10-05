@@ -11,6 +11,10 @@ if (!defined('ABSPATH')) {
 
 $about_url    = quterma_get_page_url('about', home_url('/about/'));
 $ad_url       = quterma_get_page_url('advertising', home_url('/advertising/'));
+$privacy_url  = function_exists('get_privacy_policy_url') && get_privacy_policy_url() ? get_privacy_policy_url() : quterma_get_page_url('privacy-policy', home_url('/privacy-policy/'));
+$legal_url    = quterma_get_page_url('legal', home_url('/legal/'));
+$editorial_url = quterma_get_page_url('editorial-policy', home_url('/editorial-policy/'));
+$support_url  = quterma_get_page_url('support', home_url('/about/#support'));
 $email        = get_theme_mod('quterma_email', 'quterma@yandex.ru');
 $telegram     = get_theme_mod('quterma_telegram', 'https://t.me/kuterma');
 $vk           = get_theme_mod('quterma_vk', 'https://vk.com/kuterma');
@@ -28,7 +32,7 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
       </div>
 
       <div class="foot-contact">
-        <div class="foot-col-title"><?php esc_html_e('Связь', 'quterma'); ?></div>
+        <div class="foot-col-title"><?php esc_html_e('Редакция и право', 'quterma'); ?></div>
         <div class="foot-links">
           <?php
           if (has_nav_menu('footer')) {
@@ -43,7 +47,10 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
           } else {
           ?>
             <a href="<?php echo esc_url($ad_url); ?>" class="foot-link"><?php esc_html_e('Реклама и партнёрство', 'quterma'); ?></a>
-            <a href="<?php echo esc_url($about_url); ?>" class="foot-link"><?php esc_html_e('Поддержать редакцию', 'quterma'); ?></a>
+            <a href="<?php echo esc_url($support_url); ?>" class="foot-link"><?php esc_html_e('Поддержать редакцию', 'quterma'); ?></a>
+            <a href="<?php echo esc_url($editorial_url); ?>" class="foot-link"><?php esc_html_e('Редакционная политика', 'quterma'); ?></a>
+            <a href="<?php echo esc_url($legal_url); ?>" class="foot-link"><?php esc_html_e('Правовая информация', 'quterma'); ?></a>
+            <a href="<?php echo esc_url($privacy_url); ?>" class="foot-link"><?php esc_html_e('Политика конфиденциальности', 'quterma'); ?></a>
           <?php } ?>
           <a href="mailto:<?php echo esc_attr($email); ?>" class="foot-link foot-email"><?php echo esc_html($email); ?></a>
         </div>
@@ -97,8 +104,8 @@ $marquee_text = get_theme_mod('quterma_marquee_text', 'Что происходи
 </div>
 
 <!-- MOBILE OVERLAY & MENU -->
-<div class="mob-overlay" id="mobOverlay"></div>
-<div class="mob-menu" id="mobMenu" aria-hidden="true" hidden>
+<div class="mob-overlay" id="mobOverlay" tabindex="-1"></div>
+<div class="mob-menu" id="mobMenu" aria-hidden="true" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e('Навигация сайта', 'quterma'); ?>">
   <div class="mob-hdr">
     <span class="masthead-logo" style="font-size:20px"><?php bloginfo('name'); ?><span class="masthead-dot"></span></span>
     <button type="button" class="mob-close" id="mobClose" aria-label="<?php esc_attr_e('Закрыть меню', 'quterma'); ?>"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/></svg></button>

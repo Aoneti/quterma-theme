@@ -38,7 +38,7 @@ if ($specials_query->have_posts()) {
     $exclude_ids = array_merge($exclude_ids, wp_list_pluck($specials_query->posts, 'ID'));
 }
 
-$cinema_music_query = quterma_get_cinema_music_posts(3, $exclude_ids);
+$cinema_music_query = quterma_get_cinema_music_posts(4, $exclude_ids);
 if ($cinema_music_query->have_posts()) {
     $exclude_ids = array_merge($exclude_ids, wp_list_pluck($cinema_music_query->posts, 'ID'));
 }
@@ -50,21 +50,15 @@ $feed_url         = quterma_get_news_url();
 <div class="wrap">
   <div class="main-layout">
     <main>
-      <!-- ЛЕНТА СЕГОДНЯ -->
+      <!-- ЛЕНТА -->
       <div class="sec-div rev">
         <div class="sec-div-acc"></div>
-        <h2 class="sec-div-title"><?php esc_html_e('Лента сегодня', 'quterma'); ?></h2>
+        <h2 class="sec-div-title"><?php esc_html_e('Лента', 'quterma'); ?></h2>
         <div class="sec-div-line"></div>
         <a href="<?php echo esc_url($feed_url); ?>" class="sec-div-link">
           <?php esc_html_e('Все', 'quterma'); ?>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
-      </div>
-
-      <!-- ФИЛЬТРЫ РУБРИК ЛЕНТЫ -->
-      <div class="filters">
-        <button type="button" class="filter active" data-filter="all"><?php esc_html_e('Все', 'quterma'); ?></button>
-        <button type="button" class="filter" data-filter="improvement"><?php esc_html_e('Благоустройство', 'quterma'); ?></button>
       </div>
 
       <!-- СПИСОК НОВОСТЕЙ -->
@@ -77,18 +71,8 @@ $feed_url         = quterma_get_news_url();
                 $cat_info  = quterma_get_post_category_info();
                 $date_str  = quterma_format_date(get_the_ID(), true);
                 $is_lead   = ($feed_count === 1);
-                $post_tags = get_the_tags();
-                $filter_cat = 'all';
-                if ($post_tags) {
-                    foreach ($post_tags as $t) {
-                        if (in_array(strtolower($t->slug), array('blagoustroystvo', 'improvement', 'remont', 'blag'))) {
-                            $filter_cat = 'improvement';
-                            break;
-                        }
-                    }
-                }
             ?>
-              <article class="news-card<?php echo $is_lead ? ' featured' : ''; ?>" data-category="<?php echo esc_attr($filter_cat); ?>" onclick="location.href='<?php the_permalink(); ?>';">
+              <article class="news-card<?php echo $is_lead ? ' featured' : ''; ?>">
                 <div class="nc-img">
                   <?php if (has_post_thumbnail()) : ?>
                     <?php
@@ -97,7 +81,7 @@ $feed_url         = quterma_get_news_url();
                     the_post_thumbnail($thumb_size, array(
                         'loading' => 'lazy',
                         'sizes'   => $thumb_sizes,
-                        'alt'     => the_title_attribute(array('echo' => false)),
+                        'alt'     => '',
                     ));
                     ?>
                   <?php else : ?>
@@ -106,7 +90,7 @@ $feed_url         = quterma_get_news_url();
                 </div>
                 <div class="nc-body">
                   <span class="sr-only"><?php echo esc_html($cat_info['name']); ?></span>
-                  <h3 class="nc-title"><?php the_title(); ?></h3>
+                  <h3 class="nc-title"><a href="<?php the_permalink(); ?>" class="card-permalink"><?php the_title(); ?></a></h3>
                   <p class="nc-excerpt"><?php echo wp_trim_words(get_the_excerpt(), $is_lead ? 22 : 14, '…'); ?></p>
                   <div class="nc-meta"><?php echo quterma_time_tag(get_the_ID(), true); ?></div>
                 </div>
@@ -118,17 +102,11 @@ $feed_url         = quterma_get_news_url();
         ?>
       </div>
 
-      <!-- СОСТОЯНИЕ ДЛЯ ПУСТОГО ФИЛЬТРА -->
-      <div class="feed-empty" id="feedEmpty">
-        <p class="feed-empty-text"><?php esc_html_e('Пока нет материалов в этой рубрике — но лента постоянно пополняется.', 'quterma'); ?></p>
-        <button type="button" class="feed-empty-btn" id="feedEmptyReset"><?php esc_html_e('Показать всю ленту', 'quterma'); ?></button>
-      </div>
-
       <?php if ($feed_query->max_num_pages > 1) : ?>
-        <a href="<?php echo esc_url($feed_url); ?>" class="load-more" id="loadMoreBtn">
-          <?php esc_html_e('Показать ещё', 'quterma'); ?>
+        <button type="button" class="load-more" id="loadMoreBtn" data-page="1" data-max="<?php echo esc_attr($feed_query->max_num_pages); ?>" data-url="<?php echo esc_url($feed_url); ?>">
+          <span><?php esc_html_e('Показать ещё', 'quterma'); ?></span>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </a>
+        </button>
       <?php endif; ?>
     </main>
 
@@ -142,8 +120,7 @@ $feed_url         = quterma_get_news_url();
 
 <!-- 3. КУЛЬТУРНЫЙ СЛОЙ -->
 <?php if ($culture_query->have_posts()) :
-    $culture_cat = get_category_by_slug('kultura');
-    $culture_url = $culture_cat ? get_category_link($culture_cat) : home_url('/category/kultura/');
+    $culture_url = quterma_get_category_url('culture', home_url('/category/culture/'));
 ?>
 <section class="culture-section rev">
   <div class="wrap">
@@ -163,13 +140,13 @@ $feed_url         = quterma_get_news_url();
           $cat_info = quterma_get_post_category_info();
           $date_str = quterma_format_date(get_the_ID(), false);
       ?>
-        <article class="cc-card" onclick="location.href='<?php the_permalink(); ?>';">
+        <article class="cc-card">
           <div class="cc-img">
             <?php if (has_post_thumbnail()) : ?>
               <?php the_post_thumbnail('quterma-card-4x3', array(
                   'loading' => 'lazy',
                   'sizes'   => '(max-width: 480px) 100vw, (max-width: 900px) 50vw, 280px',
-                  'alt'     => the_title_attribute(array('echo' => false)),
+                  'alt'     => '',
               )); ?>
             <?php else : ?>
               <?php echo quterma_placeholder_img(38, 38); ?>
@@ -177,7 +154,7 @@ $feed_url         = quterma_get_news_url();
           </div>
           <div class="cc-body">
             <span class="sr-only"><?php echo esc_html($cat_info['name']); ?></span>
-            <h3 class="cc-title"><?php the_title(); ?></h3>
+            <h3 class="cc-title"><a href="<?php the_permalink(); ?>" class="card-permalink"><?php the_title(); ?></a></h3>
             <p class="cc-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 14, '…'); ?></p>
             <div class="cc-meta"><?php echo quterma_time_tag(get_the_ID(), false); ?></div>
           </div>
@@ -189,12 +166,18 @@ $feed_url         = quterma_get_news_url();
 <?php endif; ?>
 
 <!-- 4. ЛОНГРИДЫ И СПЕЦПРОЕКТЫ -->
-<?php if ($specials_query->have_posts()) : ?>
+<?php if ($specials_query->have_posts()) :
+    $specials_url = quterma_get_page_url('longreads', quterma_get_category_url('specials', home_url('/category/specials/')));
+?>
 <div class="wrap">
   <div class="sec-div rev">
     <div class="sec-div-acc" style="background:var(--accent)"></div>
     <h2 class="sec-div-title"><?php esc_html_e('Лонгриды и спецпроекты', 'quterma'); ?></h2>
     <div class="sec-div-line"></div>
+    <a href="<?php echo esc_url($specials_url); ?>" class="sec-div-link" style="color:var(--accent)">
+      <?php esc_html_e('Все', 'quterma'); ?>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
   </div>
 
   <div class="specials rev" style="margin-bottom:40px">
@@ -225,22 +208,104 @@ $feed_url         = quterma_get_news_url();
     <div class="cinema-grid">
       <?php
       while ($cinema_music_query->have_posts()) : $cinema_music_query->the_post();
-          $cat_info   = quterma_get_post_category_info();
-          $is_music   = (stripos($cat_info['slug'], 'music') !== false || stripos($cat_info['slug'], 'muzyk') !== false || stripos($cat_info['name'], 'музык') !== false);
-          $badge_name = $is_music ? __('Музыка', 'quterma') : __('Кино', 'quterma');
-          $post_tags  = get_the_tags();
-          $tag_label  = (!empty($post_tags) && isset($post_tags[0])) ? $post_tags[0]->name : ($is_music ? __('Плейлист', 'quterma') : __('Премьера', 'quterma'));
+          $post_id     = get_the_ID();
+          $cat_info    = quterma_get_post_category_info();
+          $all_cats    = get_the_category($post_id);
+          $post_tags   = get_the_tags($post_id);
+          $badge_name  = '';
+          $tag_label   = '';
+          $is_music    = false;
+
+          // 1. Check child categories first
+          if (!empty($all_cats)) {
+              // Find any child category (parent > 0) or specific category
+              foreach ($all_cats as $c) {
+                  $c_name = function_exists('mb_strtolower') ? mb_strtolower(trim($c->name), 'UTF-8') : strtolower(trim($c->name));
+                  $c_slug = strtolower(trim(urldecode($c->slug)));
+
+                  if ($c->parent > 0 || (strpos($c_name, 'кино и музыка') === false && strpos($c_slug, 'cinema-music') === false && strpos($c_slug, 'kino-i-muzyka') === false)) {
+                      if (strpos($c_name, 'музык') !== false || strpos($c_slug, 'music') !== false || strpos($c_slug, 'muzyk') !== false) {
+                          $badge_name = __('Музыка', 'quterma');
+                          $is_music   = true;
+                          break;
+                      } elseif (strpos($c_name, 'кино') !== false || strpos($c_slug, 'cinema') !== false || strpos($c_slug, 'kino') !== false || strpos($c_name, 'фильм') !== false) {
+                          $badge_name = __('Кино', 'quterma');
+                          break;
+                      } else {
+                          // Child category like "Сериалы", "Концерты", "Релизы", etc.
+                          $badge_name = $c->name;
+                          if (strpos($c_name, 'концерт') !== false || strpos($c_name, 'плейлист') !== false || strpos($c_name, 'альбом') !== false) {
+                              $is_music = true;
+                          }
+                          break;
+                      }
+                  }
+              }
+          }
+
+          // 2. Check tags if badge not determined by child category
+          if (empty($badge_name) && !empty($post_tags)) {
+              foreach ($post_tags as $t) {
+                  $t_name = function_exists('mb_strtolower') ? mb_strtolower(trim($t->name), 'UTF-8') : strtolower(trim($t->name));
+                  $t_slug = strtolower(trim(urldecode($t->slug)));
+
+                  if ($t_name === 'музыка' || strpos($t_name, 'музык') !== false || strpos($t_slug, 'music') !== false || strpos($t_slug, 'muzyk') !== false) {
+                      $badge_name = __('Музыка', 'quterma');
+                      $is_music   = true;
+                      break;
+                  } elseif ($t_name === 'кино' || strpos($t_name, 'кино') !== false || strpos($t_slug, 'cinema') !== false || strpos($t_slug, 'kino') !== false) {
+                      $badge_name = __('Кино', 'quterma');
+                      break;
+                  }
+              }
+          }
+
+          // 3. Audio / Video post format check
+          if (empty($badge_name)) {
+              $format = get_post_format($post_id);
+              if ($format === 'audio') {
+                  $badge_name = __('Музыка', 'quterma');
+                  $is_music   = true;
+              } elseif ($format === 'video') {
+                  $badge_name = __('Кино', 'quterma');
+              }
+          }
+
+          // 4. Keyword heuristics from title/content if still unresolved
+          if (empty($badge_name)) {
+              $title_lower = function_exists('mb_strtolower') ? mb_strtolower(get_the_title(), 'UTF-8') : strtolower(get_the_title());
+              if (preg_match('/(музык|трек|альбом|песн|плейлист|концерт|клип|звук|оркестр)/u', $title_lower)) {
+                  $badge_name = __('Музыка', 'quterma');
+                  $is_music   = true;
+              } else {
+                  $badge_name = __('Кино', 'quterma');
+              }
+          }
+
+          // Pick the first editorial tag for the vinyl badge in top-right
+          if (!empty($post_tags)) {
+              foreach ($post_tags as $t) {
+                  $t_name_check = function_exists('mb_strtolower') ? mb_strtolower(trim($t->name), 'UTF-8') : strtolower(trim($t->name));
+                  $b_name_check = function_exists('mb_strtolower') ? mb_strtolower(trim($badge_name), 'UTF-8') : strtolower(trim($badge_name));
+                  if ($t_name_check !== 'кино' && $t_name_check !== 'музыка' && $t_name_check !== 'кино и музыка' && $t_name_check !== $b_name_check) {
+                      $tag_label = $t->name;
+                      break;
+                  }
+              }
+          }
       ?>
         <a href="<?php the_permalink(); ?>" class="cm-card">
           <div class="cm-media">
             <div class="cm-badge"><?php echo esc_html($badge_name); ?></div>
-            <span class="cm-vinyl-tag"><?php echo esc_html($tag_label); ?></span>
+            <?php if (!empty($tag_label)) : ?>
+              <span class="cm-vinyl-tag"><?php echo esc_html($tag_label); ?></span>
+            <?php endif; ?>
             <?php if (has_post_thumbnail()) : ?>
               <div style="aspect-ratio:16/10;overflow:hidden">
                 <?php the_post_thumbnail('quterma-card-4x3', array(
                     'loading' => 'lazy',
                     'sizes'   => '(max-width: 480px) 100vw, (max-width: 768px) 50vw, 360px',
-                    'alt'     => the_title_attribute(array('echo' => false)),
+                    'alt'     => '',
                 )); ?>
               </div>
             <?php else : ?>
@@ -265,7 +330,7 @@ $feed_url         = quterma_get_news_url();
 <!-- 6. ИНТЕРВЬЮ -->
 <?php
 $interview_url = quterma_get_page_url('interview', home_url('/category/interview/'));
-$iv_query      = quterma_get_interview_posts(4, $exclude_ids);
+$iv_query      = quterma_get_interview_posts(3, $exclude_ids);
 if ($iv_query->have_posts()) :
 ?>
 <section class="interview-section rev">
@@ -293,8 +358,8 @@ if ($iv_query->have_posts()) :
               <div style="aspect-ratio:16/11;overflow:hidden">
                 <?php the_post_thumbnail('quterma-card-4x3', array(
                     'loading' => 'lazy',
-                    'sizes'   => '(max-width: 480px) 100vw, (max-width: 768px) 50vw, 300px',
-                    'alt'     => the_title_attribute(array('echo' => false)),
+                    'sizes'   => '(max-width: 480px) 100vw, (max-width: 768px) 50vw, 360px',
+                    'alt'     => '',
                 )); ?>
               </div>
             <?php else : ?>
@@ -302,10 +367,13 @@ if ($iv_query->have_posts()) :
             <?php endif; ?>
           </div>
           <div class="iv-body">
-            <div class="iv-person"><?php echo esc_html($person_name); ?></div>
-            <?php if (!empty($custom_role)) : ?>
-              <div class="iv-role"><?php echo esc_html($custom_role); ?></div>
-            <?php endif; ?>
+            <div class="iv-person-row">
+              <span class="iv-person-name"><?php echo esc_html($person_name); ?></span>
+              <?php if (!empty($custom_role)) : ?>
+                <span class="iv-person-role"><?php echo esc_html($custom_role); ?></span>
+              <?php endif; ?>
+            </div>
+            <h3 class="iv-title"><?php the_title(); ?></h3>
             <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 14, '…'); ?></p>
             <div class="iv-meta">
               <span><?php echo quterma_time_tag(get_the_ID(), false); ?></span>

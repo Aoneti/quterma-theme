@@ -53,8 +53,12 @@ $page_subtitle = $posts_page_id ? get_post_field('post_excerpt', $posts_page_id)
         ));
         ?>
       <?php else : ?>
-        <div class="empty-state">
-          <p class="empty-state-text"><?php esc_html_e('Пока нет опубликованных новостей.', 'quterma'); ?></p>
+        <div class="empty-state show">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          </div>
+          <p class="empty-state-text"><?php esc_html_e('Пока нет опубликованных новостей в этом разделе — но редакция готовит новые материалы.', 'quterma'); ?></p>
+          <a href="<?php echo esc_url(home_url('/')); ?>" class="empty-state-btn"><?php esc_html_e('Вернуться на главную', 'quterma'); ?></a>
         </div>
       <?php endif; ?>
     </main>

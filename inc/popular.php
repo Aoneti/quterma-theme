@@ -156,8 +156,7 @@ function quterma_get_popular_posts_by_period($period = 'today', $limit = 5) {
         case 'yesterday':
             $date_query = array(
                 array(
-                    'after'     => 'yesterday 00:00:00',
-                    'before'    => 'today 00:00:00',
+                    'after'     => '4 days ago',
                     'inclusive' => true,
                 ),
             );
@@ -180,16 +179,18 @@ function quterma_get_popular_posts_by_period($period = 'today', $limit = 5) {
             break;
         case 'today':
         default:
+            // "Сегодня" includes articles from the last 3 days (today and yesterday)
+            // ranked by popularity and view count
             $date_query = array(
                 array(
-                    'after'     => 'today 00:00:00',
+                    'after'     => '3 days ago',
                     'inclusive' => true,
                 ),
             );
             break;
     }
 
-    // 1. Try to find posts with view counts in the selected period
+    // 1. Try to find posts with view counts in the selected period (sorted by views first)
     $args = array(
         'post_type'              => 'post',
         'post_status'            => 'publish',
@@ -205,7 +206,35 @@ function quterma_get_popular_posts_by_period($period = 'today', $limit = 5) {
     $query = new WP_Query($args);
     $results = $query->posts;
 
-    // 2. If view counts aren't set yet, fallback to recent posts in that period
+    // 2. If view count query didn't return enough posts within window, expand window by views
+    if (empty($results) || count($results) < $limit) {
+        $needed = $limit - count($results);
+        $exclude_ids = wp_list_pluck($results, 'ID');
+        $wider_args = array(
+            'post_type'              => 'post',
+            'post_status'            => 'publish',
+            'posts_per_page'         => $needed,
+            'post__not_in'           => $exclude_ids,
+            'ignore_sticky_posts'    => true,
+            'meta_key'               => QUTERMA_VIEWS_META_KEY,
+            'orderby'                => 'meta_value_num date',
+            'order'                  => 'DESC',
+            'date_query'             => array(
+                array(
+                    'after'     => '30 days ago',
+                    'inclusive' => true,
+                ),
+            ),
+            'no_found_rows'          => true,
+            'update_post_term_cache' => false,
+        );
+        $wider_query = new WP_Query($wider_args);
+        if ($wider_query->have_posts()) {
+            $results = array_merge($results, $wider_query->posts);
+        }
+    }
+
+    // 3. Fallback: fill remaining slots with recent published posts
     if (empty($results) || count($results) < $limit) {
         $needed = $limit - count($results);
         $exclude_ids = wp_list_pluck($results, 'ID');
@@ -217,7 +246,6 @@ function quterma_get_popular_posts_by_period($period = 'today', $limit = 5) {
             'ignore_sticky_posts'    => true,
             'orderby'                => 'date',
             'order'                  => 'DESC',
-            'date_query'             => $date_query,
             'no_found_rows'          => true,
             'update_post_term_cache' => false,
         );

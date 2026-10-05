@@ -18,8 +18,33 @@ $venues_query = new WP_Query(array(
     'posts_per_page' => -1,
     'orderby'        => 'menu_order title',
     'order'          => 'ASC',
-    'no_found_rows'  => true,
+    'no_found_rows'  => false,
 ));
+
+$total_venues = $venues_query->found_posts;
+$cities = array(
+    'yaroslavl'    => __('Ярославль', 'quterma'),
+    'rybinsk'      => __('Рыбинск', 'quterma'),
+    'rostov'       => __('Ростов Великий', 'quterma'),
+    'pereslavl'    => __('Переславль-Залесский', 'quterma'),
+    'tutaev'       => __('Тутаев', 'quterma'),
+    'uglich'       => __('Углич', 'quterma'),
+    'gavrilov-yam' => __('Гаврилов-Ям', 'quterma'),
+    'danilov'      => __('Данилов', 'quterma'),
+    'lyubim'       => __('Любим', 'quterma'),
+    'myshkin'      => __('Мышкин', 'quterma'),
+    'poshekhonye'  => __('Пошехонье', 'quterma'),
+    'breytovo'     => __('Брейтово', 'quterma'),
+);
+
+$city_counts = array();
+if ($venues_query->have_posts()) {
+    foreach ($venues_query->posts as $p) {
+        $c_slug = get_post_meta($p->ID, '_venue_city', true);
+        if (empty($c_slug)) $c_slug = 'yaroslavl';
+        $city_counts[$c_slug] = ($city_counts[$c_slug] ?? 0) + 1;
+    }
+}
 ?>
 
 <div class="wrap">
@@ -40,25 +65,23 @@ $venues_query = new WP_Query(array(
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <div class="filters" id="cityFilters">
-        <button type="button" class="filter active" data-city="all"><?php esc_html_e('Все города', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="yaroslavl"><?php esc_html_e('Ярославль', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="rybinsk"><?php esc_html_e('Рыбинск', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="rostov"><?php esc_html_e('Ростов Великий', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="pereslavl"><?php esc_html_e('Переславль-Залесский', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="tutaev"><?php esc_html_e('Тутаев', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="uglich"><?php esc_html_e('Углич', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="gavrilov-yam"><?php esc_html_e('Гаврилов-Ям', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="danilov"><?php esc_html_e('Данилов', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="lyubim"><?php esc_html_e('Любим', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="myshkin"><?php esc_html_e('Мышкин', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="poshekhonye"><?php esc_html_e('Пошехонье', 'quterma'); ?></button>
-        <button type="button" class="filter" data-city="breytovo"><?php esc_html_e('Брейтово', 'quterma'); ?></button>
+        <button type="button" class="filter active" data-city="all">
+          <?php esc_html_e('Все города', 'quterma'); ?> <span class="filter-cnt">(<?php echo $total_venues; ?>)</span>
+        </button>
+        <?php foreach ($cities as $c_slug => $c_name) :
+            $cnt = $city_counts[$c_slug] ?? 0;
+            $empty_class = ($cnt === 0) ? ' is-empty' : '';
+        ?>
+          <button type="button" class="filter<?php echo $empty_class; ?>" data-city="<?php echo esc_attr($c_slug); ?>" data-count="<?php echo $cnt; ?>">
+            <?php echo esc_html($c_name); ?> <span class="filter-cnt">(<?php echo $cnt; ?>)</span>
+          </button>
+        <?php endforeach; ?>
       </div>
       <button class="filter-scroll-btn filter-scroll-next" type="button" aria-label="<?php esc_attr_e('Вперед', 'quterma'); ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
-    <button type="button" class="filter-more-btn" id="moreFiltersBtn">
+    <button type="button" class="filter-more-btn" id="moreFiltersBtn" aria-expanded="false" aria-controls="extraFilters">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="var(--paper)"/>
         <line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="var(--paper)"/>
@@ -99,6 +122,17 @@ $venues_query = new WP_Query(array(
     </div>
   </div>
 
+  <!-- СВОДКА ФИЛЬТРОВ И СЧЕТЧИК НАЙДЕННОГО -->
+  <div class="filter-summary-bar rev" id="venueSummaryBar">
+    <div class="filter-summary-count">
+      <?php esc_html_e('Найдено заведений:', 'quterma'); ?> <strong id="venueCountNum"><?php echo $total_venues; ?></strong>
+    </div>
+    <div class="active-chips" id="venueActiveChips"></div>
+    <button type="button" class="filter-reset-link" id="venueResetLink" style="display:none">
+      <?php esc_html_e('Сбросить фильтры ✕', 'quterma'); ?>
+    </button>
+  </div>
+
   <!-- СЕТКА ЗАВЕДЕНИЙ -->
   <div class="venue-grid rev" id="venueGrid" style="margin-bottom:24px">
     <?php
@@ -113,10 +147,13 @@ $venues_query = new WP_Query(array(
 
   <div class="empty-state<?php echo !$venues_query->have_posts() ? ' show' : ''; ?>" id="venueEmpty">
     <div class="empty-state-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+        <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+      </svg>
     </div>
-    <p class="empty-state-text"><?php esc_html_e('В этом разделе пока нет заведений в гастрогиде — но мы постоянно пополняем каталог.', 'quterma'); ?></p>
-    <button type="button" class="empty-state-btn" id="venueEmptyReset"><?php esc_html_e('Показать все города', 'quterma'); ?></button>
+    <p class="empty-state-text"><?php esc_html_e('По выбранным параметрам заведений не найдено.', 'quterma'); ?></p>
+    <button type="button" class="empty-state-btn" id="venueEmptyReset"><?php esc_html_e('Сбросить фильтры', 'quterma'); ?></button>
   </div>
 </div>
 

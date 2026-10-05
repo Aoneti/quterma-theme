@@ -15,13 +15,13 @@ if (empty($event)) {
     return;
 }
 
-$name      = !empty($event['name']) ? $event['name'] : '';
-$type      = !empty($event['type']) ? $event['type'] : __('Событие', 'quterma');
-$city_name = !empty($event['city_name']) ? $event['city_name'] : 'Ярославль';
-$city_slug = !empty($event['city_slug']) ? $event['city_slug'] : 'yaroslavl';
+$name        = !empty($event['name']) ? $event['name'] : '';
+$type        = !empty($event['type']) ? $event['type'] : __('Событие', 'quterma');
+$city_name   = !empty($event['city_name']) ? $event['city_name'] : 'Ярославль';
+$city_slug   = !empty($event['city_slug']) ? $event['city_slug'] : 'yaroslavl';
 $when_tokens = !empty($event['when_tokens']) ? $event['when_tokens'] : (!empty($event['when_slug']) ? $event['when_slug'] : 'today');
 $day         = !empty($event['day']) ? $event['day'] : wp_date('j');
-$month       = !empty($event['month']) ? $event['month'] : wp_date('F');
+$month       = !empty($event['month']) ? $event['month'] : wp_date('M');
 $time        = !empty($event['time']) ? $event['time'] : '19:00';
 $iso         = !empty($event['iso']) ? $event['iso'] : '';
 $place       = !empty($event['place']) ? $event['place'] : '';
@@ -37,9 +37,18 @@ $url         = !empty($event['url']) ? $event['url'] : '#';
     <span class="event-city-badge"><?php echo esc_html($city_name); ?></span>
 
     <?php if (!empty($image)) : ?>
-      <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($name); ?>" loading="lazy" />
+      <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($name); ?>" loading="lazy" onerror="this.style.display='none';if(this.nextElementSibling){this.nextElementSibling.style.display='flex';}" />
+      <div class="event-fallback-ph ph-img" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:linear-gradient(135deg,#1E2620 0%,#141916 100%);color:var(--brand-2)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="42" height="42">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
     <?php else : ?>
-      <?php echo quterma_placeholder_img(38, 38); ?>
+      <div class="event-fallback-ph ph-img" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;background:linear-gradient(135deg,#1E2620 0%,#141916 100%);color:var(--brand-2)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="42" height="42">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
     <?php endif; ?>
   </div>
 

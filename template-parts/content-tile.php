@@ -22,7 +22,7 @@ $date_str = quterma_format_date(get_the_ID(), false);
         'class'   => 'tile-img',
         'loading' => 'lazy',
         'sizes'   => $sizes_attr,
-        'alt'     => the_title_attribute(array('echo' => false)),
+        'alt'     => '',
     ));
     ?>
   <?php else : ?>

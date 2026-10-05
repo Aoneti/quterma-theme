@@ -22,14 +22,19 @@ if (empty($type)) {
 $address   = get_post_meta($post_id, '_venue_address', true);
 $price     = get_post_meta($post_id, '_venue_price', true);
 $features  = get_post_meta($post_id, '_venue_features', true);
+
 if (is_array($features)) {
     $features_str = implode(' ', array_map('mb_strtolower', $features));
-} elseif (is_string($features)) {
+    $features_list = $features;
+} elseif (is_string($features) && !empty($features)) {
     $features_str = mb_strtolower($features);
+    $features_list = array_map('trim', explode(',', $features));
 } else {
     $features_str = '';
+    $features_list = array();
 }
-$desc      = get_the_excerpt();
+
+$desc = get_the_excerpt();
 if (empty($desc)) {
     $desc = wp_trim_words(get_the_content(), 15, '…');
 }
@@ -42,7 +47,7 @@ if (empty($desc)) {
       <?php the_post_thumbnail('quterma-card-4x3', array(
           'loading' => 'lazy',
           'sizes'   => '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px',
-          'alt'     => the_title_attribute(array('echo' => false)),
+          'alt'     => '',
       )); ?>
     <?php else : ?>
       <?php echo quterma_placeholder_img(38, 38); ?>
@@ -50,6 +55,19 @@ if (empty($desc)) {
   </div>
   <div class="venue-body">
     <div class="venue-name"><?php the_title(); ?></div>
+
+    <!-- ЦЕНА И ОСОБЕННОСТИ ЗАВЕДЕНИЯ -->
+    <div class="venue-chips-row">
+      <?php if (!empty($price)) : ?>
+        <span class="venue-price-chip" title="<?php esc_attr_e('Ценовой диапазон', 'quterma'); ?>"><?php echo esc_html($price); ?></span>
+      <?php endif; ?>
+      <?php if (!empty($features_list)) : ?>
+        <?php foreach (array_slice($features_list, 0, 3) as $feat_item) : ?>
+          <span class="venue-feat-chip"><?php echo esc_html($feat_item); ?></span>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+
     <?php if (!empty($address)) : ?>
       <div class="venue-address">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -18,6 +18,9 @@ while (have_posts()) : the_post();
     $author_name  = get_the_author_meta('display_name');
     $initials     = quterma_get_author_initials();
     $lede         = has_excerpt() ? get_the_excerpt() : '';
+    $iv_person    = get_post_meta(get_the_ID(), '_iv_person', true);
+    $iv_role      = get_post_meta(get_the_ID(), '_iv_role', true);
+    $is_interview = (stripos($cat_info['slug'], 'interview') !== false || stripos($cat_info['slug'], 'intervyu') !== false || !empty($iv_person));
 
     // Related posts query (from the primary editorial category, excluding service placement categories)
     $primary_cat = quterma_get_primary_category();
@@ -36,25 +39,22 @@ while (have_posts()) : the_post();
 <main id="content">
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
   <div class="wrap" style="padding-top:24px">
-    <div style="max-width:820px;margin-left:auto;margin-right:auto">
-      <?php get_template_part('template-parts/breadcrumbs'); ?>
-    </div>
-
     <div class="article-header">
-      <div class="article-kicker"><?php echo esc_html($cat_info['name']); ?></div>
-      <h1 class="article-headline"><?php the_title(); ?></h1>
+      <?php get_template_part('template-parts/breadcrumbs'); ?>
 
-      <?php
-      $iv_person = get_post_meta(get_the_ID(), '_iv_person', true);
-      $iv_role   = get_post_meta(get_the_ID(), '_iv_role', true);
-      if (!empty($iv_person) || !empty($iv_role)) : ?>
-        <div class="interview-person-hero" style="margin-top:14px;padding:12px 18px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:2px">
-          <div style="font-family:var(--fs);font-size:22px;font-weight:700;color:var(--ink)"><?php echo esc_html($iv_person ? $iv_person : get_the_title()); ?></div>
+      <?php if (!empty($iv_person) || !empty($iv_role) || $is_interview) : 
+          $display_person = !empty($iv_person) ? $iv_person : get_the_title();
+      ?>
+        <div class="interview-person-hero">
+          <div class="iv-hero-badge"><?php esc_html_e('Герой интервью', 'quterma'); ?></div>
+          <div class="iv-hero-name"><?php echo esc_html($display_person); ?></div>
           <?php if (!empty($iv_role)) : ?>
-            <div style="font-size:var(--t-xs);color:var(--ink-3);margin-top:2px;font-weight:600"><?php echo esc_html($iv_role); ?></div>
+            <div class="iv-hero-role"><?php echo esc_html($iv_role); ?></div>
           <?php endif; ?>
         </div>
       <?php endif; ?>
+
+      <h1 class="article-headline"><?php the_title(); ?></h1>
 
       <?php if (!empty($lede)) : ?>
         <p class="article-lede"><?php echo esc_html($lede); ?></p>
@@ -72,15 +72,17 @@ while (have_posts()) : the_post();
 
   <div class="wrap">
     <?php if (has_post_thumbnail()) :
-        $thumb_id = get_post_thumbnail_id();
-        $caption  = wp_get_attachment_caption($thumb_id);
+        $thumb_id  = get_post_thumbnail_id();
+        $photo_alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);
+        $caption   = wp_get_attachment_caption($thumb_id);
+        $final_alt = !empty($photo_alt) ? $photo_alt : (!empty($caption) ? $caption : '');
     ?>
-      <figure class="article-wide" style="margin-bottom:0">
+      <figure class="article-lead-figure">
         <?php the_post_thumbnail('quterma-hero', array(
             'loading'       => 'eager',
             'fetchpriority' => 'high',
-            'sizes'         => '(max-width: 768px) 100vw, 820px',
-            'alt'           => the_title_attribute(array('echo' => false)),
+            'sizes'         => '(max-width: 768px) 100vw, 860px',
+            'alt'           => $final_alt,
         )); ?>
       </figure>
       <?php if (!empty($caption)) : ?>
@@ -108,8 +110,8 @@ while (have_posts()) : the_post();
       <div class="article-tags">
         <div class="tags-cloud">
           <?php foreach ($post_tags as $tag) : ?>
-            <a href="<?php echo esc_url(get_tag_link($tag)); ?>" class="tag">
-              <?php echo esc_html($tag->name); ?>
+            <a href="<?php echo esc_url(get_tag_link($tag)); ?>" class="tag theme-tag">
+              <span class="tag-hash">#</span><?php echo esc_html($tag->name); ?>
             </a>
           <?php endforeach; ?>
         </div>
@@ -151,7 +153,7 @@ while (have_posts()) : the_post();
               <?php the_post_thumbnail('quterma-card-4x3', array(
                   'loading' => 'lazy',
                   'sizes'   => '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px',
-                  'alt'     => the_title_attribute(array('echo' => false)),
+                  'alt'     => '',
               )); ?>
             <?php else : ?>
               <?php echo quterma_placeholder_img(38, 38); ?>

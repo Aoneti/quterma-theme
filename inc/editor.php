@@ -96,6 +96,34 @@ function quterma_register_block_patterns() {
                              '</div>',
         )
     );
+
+    // 6. Interview Dialogue (Реплики диалога интервью: вопрос и ответ)
+    register_block_pattern(
+        'quterma/interview-dialog',
+        array(
+            'title'       => __('Диалог интервью (Вопрос и Ответ)', 'quterma'),
+            'description' => __('Оформленные реплики редакции и собеседника в интервью', 'quterma'),
+            'categories'  => array('quterma'),
+            'content'     => '<div class="interview-dialog">' .
+                             '<div class="dialog-turn turn-q"><strong class="dialog-speaker">— Редакция:</strong> Как начинался проект и с какими главными сложностями пришлось столкнуться?</div>' .
+                             '<div class="dialog-turn turn-a"><strong class="dialog-speaker">— Герой интервью:</strong> Самым важным было сохранить историческую ткань и аутентичные детали здания. Мы провели в архивах не один месяц.</div>' .
+                             '</div>',
+        )
+    );
+
+    // 7. Photo Story with Caption (Фотоистория с подписью)
+    register_block_pattern(
+        'quterma/photo-story',
+        array(
+            'title'       => __('Фотоистория с акцентной подписью', 'quterma'),
+            'description' => __('Широкая фотография с подписью автора для репортажей и историй', 'quterma'),
+            'categories'  => array('quterma'),
+            'content'     => '<figure class="wp-block-image alignwide photo-story-figure">' .
+                             '<img src="" alt="Фотография репортажа" loading="lazy" />' .
+                             '<figcaption>Исторический фасад после реставрации. Автор снимка: редакция издания</figcaption>' .
+                             '</figure>',
+        )
+    );
 }
 add_action('init', 'quterma_register_block_patterns');
 

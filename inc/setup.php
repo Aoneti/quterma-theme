@@ -209,6 +209,30 @@ function quterma_auto_create_core_pages() {
             'content'  => '<p class="lead">Мы предлагаем нативные спецпроекты, репортажи, фотоистории и интеграции в рубриках «Гастрогид» и «Культурный слой».</p><p>Для получения медиакита и обсуждения условий партнерства пишите: <strong>reklama@quterma.ru</strong></p>',
             'template' => 'page.php',
         ),
+        'news' => array(
+            'title'    => 'Все новости',
+            'excerpt'  => 'Хроника событий, новости городской жизни, культуры и общества Ярославля',
+            'content'  => '',
+            'template' => 'home.php',
+        ),
+        'editorial-policy' => array(
+            'title'    => 'Редакционная политика',
+            'excerpt'  => 'Принципы фактчекинга, независимости и журналистские стандарты издания «Кутерьма»',
+            'content'  => '<p class="lead">«Кутерьма» — независимое городское сетевое издание. Мы придерживаемся принципов честной и открытой журналистики, проверяем факты и разделяем редакционный контент и коммерческие материалы.</p><h2>Принципы работы</h2><p>Редакция не публикует заказные статьи под видом авторских репортажей. Все партнёрские и нативные материалы имеют явную маркировку. Мы уважаем авторское право и всегда указываем первоисточники и фотографов.</p>',
+            'template' => 'page.php',
+        ),
+        'legal' => array(
+            'title'    => 'Правовая информация',
+            'excerpt'  => 'Правила использования материалов и правовой статус интернет-издания',
+            'content'  => '<p class="lead">Все материалы издания защищены законодательством РФ об интеллектуальной собственности.</p><p>Использование текстовых и визуальных материалов сайта в коммерческих целях допускается только с письменного согласия редакции. Цитирование материалов в СМИ и блогах разрешено при условии обязательной гиперссылки на первоисточник.</p>',
+            'template' => 'page.php',
+        ),
+        'privacy-policy' => array(
+            'title'    => 'Политика конфиденциальности',
+            'excerpt'  => 'Порядок обработки персональных данных пользователей и использование cookie',
+            'content'  => '<p class="lead">Настоящая политика регулирует порядок обработки персональных данных и использование файлов cookie интернет-изданием «Кутерьма».</p><p>Сайт использует технические файлы cookie для улучшения взаимодействия с читателями, запоминания настроек и сбора обезличенной аналитической статистики посещаемости. Мы не передаём персональные данные третьим лицам без согласия пользователя.</p>',
+            'template' => 'page.php',
+        ),
     );
 
     foreach ($pages as $slug => $data) {
@@ -227,6 +251,17 @@ function quterma_auto_create_core_pages() {
             if (!is_wp_error($page_id) && !empty($data['template']) && $data['template'] !== 'page.php') {
                 update_post_meta($page_id, '_wp_page_template', $data['template']);
             }
+        }
+    }
+
+    // Set page_for_posts if not set yet
+    if ((int) get_option('page_for_posts') === 0) {
+        $news_page = get_page_by_path('news');
+        if (!$news_page) {
+            $news_page = get_page_by_path('vse-novosti');
+        }
+        if ($news_page) {
+            update_option('page_for_posts', $news_page->ID);
         }
     }
 }
@@ -312,16 +347,19 @@ function quterma_resolve_virtual_routes() {
     $segments = explode('/', $req_path);
     $first = isset($segments[0]) ? $segments[0] : '';
 
-    // News endpoint: /news or /news/
-    if ($first === 'news') {
-        $cat = get_category_by_slug('news');
-        if ($cat) {
-            wp_safe_redirect(get_category_link($cat), 301);
-            exit;
+    // News endpoint: /news or /news/ or /vse-novosti/
+    if ($first === 'news' || $first === 'vse-novosti' || $first === 'all-news') {
+        $page_for_posts = (int) get_option('page_for_posts');
+        if ($page_for_posts > 0) {
+            $news_url = get_permalink($page_for_posts);
+            if ($news_url && untrailingslashit($news_url) !== untrailingslashit(home_url($first))) {
+                wp_safe_redirect($news_url, 301);
+                exit;
+            }
         }
-        $page = get_page_by_path('news');
+        $page = get_page_by_path($first);
         if ($page) {
-            quterma_render_core_page_view('news', $page->post_title, $page->post_content, 'home.php');
+            quterma_render_core_page_view($first, $page->post_title, $page->post_content, 'home.php');
         }
         status_header(200);
         global $wp_query;
@@ -400,6 +438,50 @@ function quterma_resolve_virtual_routes() {
             'page.php',
             __('Форматы нативной рекламы, спецпроекты и интеграции для локальных брендов', 'quterma')
         );
+    }
+
+    // Editorial policy endpoint: /editorial-policy
+    if ($first === 'editorial-policy') {
+        quterma_render_core_page_view(
+            'editorial-policy',
+            __('Редакционная политика', 'quterma'),
+            '<p class="lead">«Кутерьма» — независимое городское сетевое издание. Мы придерживаемся принципов честной и открытой журналистики, проверяем факты и разделяем редакционный контент и коммерческие материалы.</p><h2>Принципы работы</h2><p>Редакция не публикует заказные статьи под видом авторских репортажей. Все партнёрские и нативные материалы имеют явную маркировку. Мы уважаем авторское право и всегда указываем первоисточники и фотографов.</p>',
+            'page.php',
+            __('Принципы фактчекинга, независимости и стандарты издания', 'quterma')
+        );
+    }
+
+    // Legal information endpoint: /legal
+    if ($first === 'legal') {
+        quterma_render_core_page_view(
+            'legal',
+            __('Правовая информация', 'quterma'),
+            '<p class="lead">Все материалы издания защищены законодательством РФ об интеллектуальной собственности.</p><p>Использование текстовых и визуальных материалов сайта в коммерческих целях допускается только с письменного согласия редакции. Цитирование материалов в СМИ и блогах разрешено при условии обязательной гиперссылки на первоисточник.</p>',
+            'page.php',
+            __('Правила использования материалов и правовой статус интернет-издания', 'quterma')
+        );
+    }
+
+    // Privacy policy endpoint: /privacy-policy
+    if ($first === 'privacy-policy' || $first === 'privacy') {
+        quterma_render_core_page_view(
+            'privacy-policy',
+            __('Политика конфиденциальности', 'quterma'),
+            '<p class="lead">Настоящая политика регулирует порядок обработки персональных данных и использование файлов cookie интернет-изданием «Кутерьма».</p><p>Сайт использует технические файлы cookie для улучшения взаимодействия с читателями, запоминания настроек и сбора обезличенной аналитической статистики посещаемости. Мы не передаём персональные данные третьим лицам без согласия пользователя.</p>',
+            'page.php',
+            __('Порядок обработки персональных данных пользователей и использование cookie', 'quterma')
+        );
+    }
+
+    // Category kultura -> culture redirect
+    if (($first === 'category' && isset($segments[1]) && ($segments[1] === 'kultura' || $segments[1] === 'culture-layer')) || $first === 'kultura') {
+        $c_cat = get_category_by_slug('culture');
+        if ($c_cat) {
+            wp_safe_redirect(get_category_link($c_cat), 301);
+            exit;
+        }
+        wp_safe_redirect(home_url('/category/culture/'), 301);
+        exit;
     }
 
     // Direct category slug fallback (e.g. user opens /culture/ instead of /category/culture/)

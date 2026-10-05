@@ -32,13 +32,18 @@ if (!$carousel_query->have_posts()) {
             $is_first = ($slide_index === 1);
         ?>
           <div class="hc-slide">
-            <?php if (has_post_thumbnail()) : ?>
+            <?php if (has_post_thumbnail()) : 
+                $thumb_id  = get_post_thumbnail_id();
+                $photo_alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);
+                $caption   = wp_get_attachment_caption($thumb_id);
+                $final_alt = !empty($photo_alt) ? $photo_alt : (!empty($caption) ? $caption : '');
+            ?>
               <?php
               the_post_thumbnail('quterma-hero', array(
                   'loading'       => $is_first ? 'eager' : 'lazy',
                   'fetchpriority' => $is_first ? 'high' : 'auto',
                   'sizes'         => '(max-width: 768px) 100vw, (max-width: 1240px) 960px, 1200px',
-                  'alt'           => the_title_attribute(array('echo' => false)),
+                  'alt'           => $final_alt,
               ));
               ?>
             <?php else : ?>
@@ -60,13 +65,15 @@ if (!$carousel_query->have_posts()) {
         <?php endwhile; wp_reset_postdata(); ?>
       </div>
 
-      <button type="button" class="hc-arrow prev" id="hcPrev" aria-label="<?php esc_attr_e('Предыдущий слайд', 'quterma'); ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <button type="button" class="hc-arrow next" id="hcNext" aria-label="<?php esc_attr_e('Следующий слайд', 'quterma'); ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-      <div class="hc-dots" id="hcDots"></div>
+      <?php if ($carousel_query->post_count > 1) : ?>
+        <button type="button" class="hc-arrow prev" id="hcPrev" aria-label="<?php esc_attr_e('Предыдущий слайд', 'quterma'); ?>">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button type="button" class="hc-arrow next" id="hcNext" aria-label="<?php esc_attr_e('Следующий слайд', 'quterma'); ?>">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="hc-dots" id="hcDots"></div>
+      <?php endif; ?>
     </div>
   </div>
 </section>
