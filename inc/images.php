@@ -30,11 +30,17 @@ function quterma_image_sizes() {
 
     // 6. Tile grid standard
     add_image_size('quterma-tile', 400, 300, true);
-
-    // 7. Author avatar
-    add_image_size('quterma-avatar', 84, 84, true);
 }
 add_action('after_setup_theme', 'quterma_image_sizes');
+
+/**
+ * Single source of truth for hero image sizes attribute (shared by preload and <img>).
+ *
+ * @return string
+ */
+function quterma_get_hero_image_sizes() {
+    return '(max-width: 768px) 100vw, 860px';
+}
 
 /**
  * Register custom sizes in editor image size selector.

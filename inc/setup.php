@@ -39,7 +39,7 @@ function quterma_setup() {
     add_theme_support('responsive-embeds');
     add_theme_support('align-wide');
     add_theme_support('editor-styles');
-    add_editor_style('assets/css/editor-style.css');
+    add_editor_style(array('assets/css/local-fonts.css', 'assets/css/editor-style.css'));
 
     // Custom background & logo (if needed by admin)
     add_theme_support('custom-logo', array(
@@ -69,10 +69,14 @@ function quterma_register_menus() {
 add_action('init', 'quterma_register_menus');
 
 /**
- * COMPLETELY DISABLE COMMENTS IN WORDPRESS
- * Per requirements:
- * "Комментариев на сайте НЕТ и не будет.
- * Функционал комментариев необходимо полностью отключить на уровне темы."
+ * DECLARATIVE COMMENT & PING DISABLEMENT
+ *
+ * Requirements & Architecture:
+ * - Comments and pingbacks/trackbacks are intentionally disabled at the theme level.
+ * - Disablement is purely declarative and scoped strictly to core publishing post types ('post', 'page', 'quterma_venue').
+ * - No dynamic loops over get_post_types() on admin_init, ensuring third-party plugins
+ *   (e.g., feedback/form plugins or custom CPTs) are never mutated or broken unexpectedly.
+ * - Existing database entries are batch-closed once during theme activation (after_switch_theme).
  */
 
 // 1. Close comments on the front-end and remove comments feed link
@@ -95,16 +99,15 @@ add_action('admin_init', function () {
         wp_safe_redirect(admin_url());
         exit;
     }
-
-    // Remove comments metabox from post types
-    $post_types = get_post_types();
-    foreach ($post_types as $post_type) {
-        if (post_type_supports($post_type, 'comments')) {
-            remove_post_type_support($post_type, 'comments');
-            remove_post_type_support($post_type, 'trackbacks');
-        }
-    }
 });
+
+// Declaratively remove comment & trackback support for core theme post types
+add_action('init', function () {
+    foreach (array('post', 'page', 'quterma_venue') as $post_type) {
+        remove_post_type_support($post_type, 'comments');
+        remove_post_type_support($post_type, 'trackbacks');
+    }
+}, 100);
 
 // 5. Remove comments-related items from admin bar
 add_action('wp_before_admin_bar_render', function () {
@@ -125,25 +128,23 @@ add_action('do_feed_atom', $quterma_disable_comments_feed, 1, 1);
 add_action('do_feed_rss',  $quterma_disable_comments_feed, 1, 1);
 add_action('do_feed_rdf',  $quterma_disable_comments_feed, 1, 1);
 
-// 7. Register theme rewrite rules for core endpoints so WordPress natively recognizes them
-function quterma_register_rewrite_rules() {
-    add_rewrite_rule('^gastroguide/?$', 'index.php?pagename=gastroguide', 'top');
-    add_rewrite_rule('^events/?$', 'index.php?pagename=events', 'top');
-    add_rewrite_rule('^interview/?$', 'index.php?pagename=interview', 'top');
-    add_rewrite_rule('^rubrics/?$', 'index.php?pagename=rubrics', 'top');
-    add_rewrite_rule('^about/?$', 'index.php?pagename=about', 'top');
-    add_rewrite_rule('^advertising/?$', 'index.php?pagename=advertising', 'top');
-}
-add_action('init', 'quterma_register_rewrite_rules');
-
-// Flush rewrite rules upon theme activation
+// 7. Flush rewrite rules and verify environment upon theme activation
 add_action('after_switch_theme', function () {
-    quterma_register_rewrite_rules();
     flush_rewrite_rules();
+    if (!extension_loaded('mbstring')) {
+        set_transient('quterma_mbstring_missing_notice', true, 60);
+    }
+});
+
+add_action('admin_notices', function () {
+    if (get_transient('quterma_mbstring_missing_notice') || (!extension_loaded('mbstring') && current_user_can('manage_options'))) {
+        echo '<div class="notice notice-warning is-dismissible"><p><strong>' . esc_html__('Внимание:', 'quterma') . '</strong> ' . esc_html__('Для темы «Кутерьма» рекомендуется включить расширение PHP mbstring для полноценной работы с кириллицей, поиском и фильтрами.', 'quterma') . '</p></div>';
+    }
 });
 
 /**
- * Ensure default WordPress categories exist upon activation/init
+ * Ensure default WordPress categories exist upon initial theme activation.
+ * Never recreates categories or overwrites user changes if already provisioned.
  */
 function quterma_ensure_default_categories() {
     $default_cats = array(
@@ -163,13 +164,11 @@ function quterma_ensure_default_categories() {
         }
     }
 }
-add_action('after_switch_theme', 'quterma_ensure_default_categories');
-add_action('admin_init', 'quterma_ensure_default_categories');
 
 /**
- * 8. Auto-provision standard pages if they don't exist yet in WP Admin -> Pages.
- * Ensures that /gastroguide/, /events/, /interview/, /rubrics/, /about/, /advertising/
- * always have concrete editable WordPress Pages.
+ * 8. Auto-provision standard pages once upon initial theme activation.
+ * Assigns explicit named templates (_wp_page_template).
+ * Does NOT generate legal copy or recreate pages deleted by administrators.
  */
 function quterma_auto_create_core_pages() {
     $pages = array(
@@ -192,7 +191,7 @@ function quterma_auto_create_core_pages() {
             'template' => 'page-interview.php',
         ),
         'rubrics' => array(
-            'title'    => 'Рубрики',
+            'title'    => 'Все рубрики',
             'excerpt'  => 'Тематические рубрики и направления городского издания «Кутерьма»',
             'content'  => '',
             'template' => 'page-rubrics.php',
@@ -201,13 +200,13 @@ function quterma_auto_create_core_pages() {
             'title'    => 'О редакции',
             'excerpt'  => 'Независимое городское медиа о культуре, истории и людях Ярославля',
             'content'  => '<p class="lead">«Кутерьма» — независимое городское интернет-издание о культуре, истории, архитектуре и людях Ярославля и волжских городов.</p><p>Мы пишем о городской среде, реставрации памятников, краеведении, современном искусстве и гастрономии. Наша цель — документировать жизнь города и рассказывать о тех, кто создает его облик.</p><h2>Связь с редакцией</h2><p>По вопросам публикации материалов, анонсов и сотрудничества: <strong>redaktsiya@quterma.ru</strong></p>',
-            'template' => 'page.php',
+            'template' => 'page-about.php',
         ),
         'advertising' => array(
             'title'    => 'Реклама и партнёрство',
             'excerpt'  => 'Форматы нативной рекламы, спецпроекты и интеграции для локальных брендов',
             'content'  => '<p class="lead">Мы предлагаем нативные спецпроекты, репортажи, фотоистории и интеграции в рубриках «Гастрогид» и «Культурный слой».</p><p>Для получения медиакита и обсуждения условий партнерства пишите: <strong>reklama@quterma.ru</strong></p>',
-            'template' => 'page.php',
+            'template' => 'page-advertising.php',
         ),
         'news' => array(
             'title'    => 'Все новости',
@@ -217,20 +216,20 @@ function quterma_auto_create_core_pages() {
         ),
         'editorial-policy' => array(
             'title'    => 'Редакционная политика',
-            'excerpt'  => 'Принципы фактчекинга, независимости и журналистские стандарты издания «Кутерьма»',
-            'content'  => '<p class="lead">«Кутерьма» — независимое городское сетевое издание. Мы придерживаемся принципов честной и открытой журналистики, проверяем факты и разделяем редакционный контент и коммерческие материалы.</p><h2>Принципы работы</h2><p>Редакция не публикует заказные статьи под видом авторских репортажей. Все партнёрские и нативные материалы имеют явную маркировку. Мы уважаем авторское право и всегда указываем первоисточники и фотографов.</p>',
+            'excerpt'  => '',
+            'content'  => '',
             'template' => 'page.php',
         ),
         'legal' => array(
             'title'    => 'Правовая информация',
-            'excerpt'  => 'Правила использования материалов и правовой статус интернет-издания',
-            'content'  => '<p class="lead">Все материалы издания защищены законодательством РФ об интеллектуальной собственности.</p><p>Использование текстовых и визуальных материалов сайта в коммерческих целях допускается только с письменного согласия редакции. Цитирование материалов в СМИ и блогах разрешено при условии обязательной гиперссылки на первоисточник.</p>',
+            'excerpt'  => '',
+            'content'  => '',
             'template' => 'page.php',
         ),
         'privacy-policy' => array(
             'title'    => 'Политика конфиденциальности',
-            'excerpt'  => 'Порядок обработки персональных данных пользователей и использование cookie',
-            'content'  => '<p class="lead">Настоящая политика регулирует порядок обработки персональных данных и использование файлов cookie интернет-изданием «Кутерьма».</p><p>Сайт использует технические файлы cookie для улучшения взаимодействия с читателями, запоминания настроек и сбора обезличенной аналитической статистики посещаемости. Мы не передаём персональные данные третьим лицам без согласия пользователя.</p>',
+            'excerpt'  => '',
+            'content'  => '',
             'template' => 'page.php',
         ),
     );
@@ -248,13 +247,13 @@ function quterma_auto_create_core_pages() {
                 'comment_status' => 'closed',
                 'ping_status'    => 'closed',
             ));
-            if (!is_wp_error($page_id) && !empty($data['template']) && $data['template'] !== 'page.php') {
+            if (!is_wp_error($page_id) && !empty($data['template'])) {
                 update_post_meta($page_id, '_wp_page_template', $data['template']);
             }
         }
     }
 
-    // Set page_for_posts if not set yet
+    // Set page_for_posts only if not set yet (0)
     if ((int) get_option('page_for_posts') === 0) {
         $news_page = get_page_by_path('news');
         if (!$news_page) {
@@ -264,47 +263,58 @@ function quterma_auto_create_core_pages() {
             update_option('page_for_posts', $news_page->ID);
         }
     }
+
+    // Batch close comments on existing posts once during initial provisioning
+    global $wpdb;
+    if ($wpdb && isset($wpdb->posts)) {
+        $wpdb->query("UPDATE {$wpdb->posts} SET comment_status = 'closed', ping_status = 'closed' WHERE comment_status != 'closed' OR ping_status != 'closed'");
+    }
 }
-add_action('after_switch_theme', 'quterma_auto_create_core_pages');
-add_action('admin_init', 'quterma_auto_create_core_pages');
 
 /**
- * Helper to render a virtual or provisioned page with full WP_Query setup (200 OK)
+ * One-time theme provisioning routine with version flag.
+ * Runs on 'after_switch_theme' only. Never runs on admin_init or public requests.
+ */
+function quterma_provision_initial_content() {
+    $schema_version = '1.1.0';
+    $provisioned = get_option('quterma_provisioned_version');
+    if ($provisioned) {
+        return; // Content already provisioned, respect administrator deletions and edits
+    }
+
+    quterma_ensure_default_categories();
+    quterma_auto_create_core_pages();
+
+    update_option('quterma_provisioned_version', $schema_version);
+}
+add_action('after_switch_theme', 'quterma_provision_initial_content');
+
+/**
+ * Helper to render an existing core page with template or safely return standard 404.
+ * Never inserts posts or performs DB writes on GET requests.
  */
 function quterma_render_core_page_view($slug, $title, $content, $template_file = 'page.php', $excerpt = '') {
     global $wp_query, $post;
 
     $page = get_page_by_path($slug);
     if (!$page) {
-        $page_id = wp_insert_post(array(
-            'post_title'     => $title,
-            'post_name'      => $slug,
-            'post_excerpt'   => $excerpt,
-            'post_content'   => $content,
-            'post_status'    => 'publish',
+        $pages = get_posts(array(
             'post_type'      => 'page',
-            'comment_status' => 'closed',
-            'ping_status'    => 'closed',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'meta_key'       => '_wp_page_template',
+            'meta_value'     => $template_file,
         ));
-        if (!is_wp_error($page_id) && $template_file !== 'page.php') {
-            update_post_meta($page_id, '_wp_page_template', $template_file);
+        if (!empty($pages)) {
+            $page = $pages[0];
         }
-        $page = get_post($page_id);
     }
 
     if (!$page || is_wp_error($page)) {
-        $page = new WP_Post((object) array(
-            'ID'             => -999,
-            'post_title'     => $title,
-            'post_name'      => $slug,
-            'post_excerpt'   => $excerpt,
-            'post_content'   => $content,
-            'post_status'    => 'publish',
-            'post_type'      => 'page',
-            'comment_status' => 'closed',
-            'ping_status'    => 'closed',
-            'filter'         => 'raw',
-        ));
+        $wp_query->set_404();
+        status_header(404);
+        nocache_headers();
+        return;
     }
 
     status_header(200);
@@ -423,8 +433,8 @@ function quterma_resolve_virtual_routes() {
         quterma_render_core_page_view(
             'about',
             __('О редакции', 'quterma'),
-            '<p class="lead">«Кутерьма» — независимое городское интернет-издание о культуре, истории, архитектуре и людях Ярославля и волжских городов.</p><p>Мы пишем о городской среде, реставрации памятников, краеведении, современном искусстве и гастрономии. Наша цель — документировать жизнь города и рассказывать о тех, кто создает его облик.</p><h2>Связь с редакцией</h2><p>По вопросам публикации материалов, анонсов и сотрудничества: <strong>redaktsiya@quterma.ru</strong></p>',
-            'page.php',
+            '',
+            'page-about.php',
             __('Независимое городское медиа о культуре, истории и людях Ярославля', 'quterma')
         );
     }
@@ -434,8 +444,8 @@ function quterma_resolve_virtual_routes() {
         quterma_render_core_page_view(
             'advertising',
             __('Реклама и партнёрство', 'quterma'),
-            '<p class="lead">Мы предлагаем нативные спецпроекты, репортажи, фотоистории и интеграции в рубриках «Гастрогид» и «Культурный слой».</p><p>Для получения медиакита и обсуждения условий партнерства пишите: <strong>reklama@quterma.ru</strong></p>',
-            'page.php',
+            '',
+            'page-advertising.php',
             __('Форматы нативной рекламы, спецпроекты и интеграции для локальных брендов', 'quterma')
         );
     }
@@ -445,9 +455,9 @@ function quterma_resolve_virtual_routes() {
         quterma_render_core_page_view(
             'editorial-policy',
             __('Редакционная политика', 'quterma'),
-            '<p class="lead">«Кутерьма» — независимое городское сетевое издание. Мы придерживаемся принципов честной и открытой журналистики, проверяем факты и разделяем редакционный контент и коммерческие материалы.</p><h2>Принципы работы</h2><p>Редакция не публикует заказные статьи под видом авторских репортажей. Все партнёрские и нативные материалы имеют явную маркировку. Мы уважаем авторское право и всегда указываем первоисточники и фотографов.</p>',
+            '',
             'page.php',
-            __('Принципы фактчекинга, независимости и стандарты издания', 'quterma')
+            ''
         );
     }
 
@@ -456,9 +466,9 @@ function quterma_resolve_virtual_routes() {
         quterma_render_core_page_view(
             'legal',
             __('Правовая информация', 'quterma'),
-            '<p class="lead">Все материалы издания защищены законодательством РФ об интеллектуальной собственности.</p><p>Использование текстовых и визуальных материалов сайта в коммерческих целях допускается только с письменного согласия редакции. Цитирование материалов в СМИ и блогах разрешено при условии обязательной гиперссылки на первоисточник.</p>',
+            '',
             'page.php',
-            __('Правила использования материалов и правовой статус интернет-издания', 'quterma')
+            ''
         );
     }
 
@@ -467,9 +477,9 @@ function quterma_resolve_virtual_routes() {
         quterma_render_core_page_view(
             'privacy-policy',
             __('Политика конфиденциальности', 'quterma'),
-            '<p class="lead">Настоящая политика регулирует порядок обработки персональных данных и использование файлов cookie интернет-изданием «Кутерьма».</p><p>Сайт использует технические файлы cookie для улучшения взаимодействия с читателями, запоминания настроек и сбора обезличенной аналитической статистики посещаемости. Мы не передаём персональные данные третьим лицам без согласия пользователя.</p>',
+            '',
             'page.php',
-            __('Порядок обработки персональных данных пользователей и использование cookie', 'quterma')
+            ''
         );
     }
 
@@ -492,3 +502,26 @@ function quterma_resolve_virtual_routes() {
     }
 }
 add_action('template_redirect', 'quterma_resolve_virtual_routes');
+
+/**
+ * Close redundant archive routes (author and date archives) to prevent duplicate content.
+ */
+function quterma_close_redundant_archives() {
+    if (is_date() || is_author()) {
+        global $wp_query;
+        $wp_query->set_404();
+        status_header(404);
+        nocache_headers();
+    }
+}
+add_action('template_redirect', 'quterma_close_redundant_archives', 1);
+
+/**
+ * Check mbstring extension requirement
+ */
+if (!extension_loaded('mbstring')) {
+    add_action('admin_notices', function () {
+        echo '<div class="notice notice-error"><p>' . esc_html__('Внимание: тема «Кутерьма» требует включенного расширения PHP mbstring для корректной работы с кириллицей и строковыми функциями.', 'quterma') . '</p></div>';
+    });
+}
+

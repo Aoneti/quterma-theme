@@ -1,6 +1,7 @@
 <?php
 /**
- * Template Name: Все рубрики (All Rubrics Page)
+ * Template Name: Все рубрики
+ * Description: Шаблон страницы всех рубрик и тем
  *
  * @package Quterma
  */
@@ -15,36 +16,85 @@ $categories = get_categories(array(
     'orderby'    => 'count',
     'order'      => 'DESC',
     'hide_empty' => true,
-    'exclude'    => array(),
 ));
 
-// Filter out carousel/lenta or unwanted technical slugs
-$excluded_slugs = array('karusel', 'carousel', 'lenta');
+// Filter out placement and technical categories using canonical theme helper
 $valid_cats = array();
 foreach ($categories as $cat) {
-    if (in_array($cat->slug, $excluded_slugs) || $cat->count < 1) {
+    if (function_exists('quterma_is_technical_category') && quterma_is_technical_category($cat)) {
+        continue;
+    }
+    if ($cat->count < 1) {
         continue;
     }
     $valid_cats[] = $cat;
 }
+
+// Single-query batch priming for latest posts to eliminate N+1 database queries
+$valid_cat_ids    = wp_list_pluck($valid_cats, 'term_id');
+$latest_posts_map = array();
+
+if (!empty($valid_cat_ids)) {
+    $batch_query = new WP_Query(array(
+        'post_type'           => 'post',
+        'post_status'         => 'publish',
+        'posts_per_page'      => 60,
+        'category__in'        => $valid_cat_ids,
+        'orderby'             => 'date',
+        'order'               => 'DESC',
+        'ignore_sticky_posts' => true,
+        'no_found_rows'       => true,
+    ));
+
+    if ($batch_query->have_posts()) {
+        foreach ($batch_query->posts as $p) {
+            $p_cats = wp_get_post_categories($p->ID);
+            foreach ($p_cats as $cid) {
+                if (!isset($latest_posts_map[$cid])) {
+                    $thumb = has_post_thumbnail($p) ? get_the_post_thumbnail_url($p, 'quterma-card-4x3') : '';
+                    $latest_posts_map[$cid] = array(
+                        'title' => get_the_title($p),
+                        'thumb' => $thumb,
+                    );
+                }
+            }
+        }
+    }
+}
 ?>
 
-<div class="wrap">
+<main id="content" class="wrap">
   <div style="padding-top:28px">
     <?php get_template_part('template-parts/breadcrumbs'); ?>
-
-    <div class="page-header">
-      <h1 class="page-title"><?php esc_html_e('Все темы и рубрики', 'quterma'); ?></h1>
-      <p class="page-subtitle"><?php esc_html_e('Тематические метки, разделы и специальные направления издания «Кутерьма».', 'quterma'); ?></p>
-    </div>
+    <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+      <div class="page-header">
+        <h1 class="page-title"><?php the_title(); ?></h1>
+        <?php if (has_excerpt()) : ?>
+          <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
+        <?php else : ?>
+          <p class="page-subtitle"><?php esc_html_e('Тематические метки, разделы и специальные направления издания «Кутерьма».', 'quterma'); ?></p>
+        <?php endif; ?>
+      </div>
+      <?php if (get_the_content()) : ?>
+        <div class="page-content rev" style="margin-bottom:28px">
+          <?php the_content(); ?>
+        </div>
+      <?php endif; ?>
+    <?php endwhile; else : ?>
+      <div class="page-header">
+        <h1 class="page-title"><?php esc_html_e('Все темы и рубрики', 'quterma'); ?></h1>
+        <p class="page-subtitle"><?php esc_html_e('Тематические метки, разделы и специальные направления издания «Кутерьма».', 'quterma'); ?></p>
+      </div>
+    <?php endif; ?>
   </div>
 
   <?php
-  // All tags with counts
+  // Tags with counts (safely limited to top 50 to avoid unbounded page payload)
   $all_tags = get_tags(array(
       'orderby'    => 'count',
       'order'      => 'DESC',
       'hide_empty' => true,
+      'number'     => 50,
   ));
   if (!empty($all_tags)) :
   ?>
@@ -77,23 +127,9 @@ foreach ($categories as $cat) {
       $cat_count = $cat->count;
       $count_str = sprintf('%d %s', $cat_count, quterma_plural($cat_count, array('материал', 'материала', 'материалов')));
       
-      // Get the single latest post in this category
-      $latest_query = new WP_Query(array(
-          'cat'            => $cat->term_id,
-          'posts_per_page' => 1,
-          'post_status'    => 'publish',
-          'no_found_rows'  => true,
-      ));
-      $latest_title = '';
-      $latest_thumb = '';
-      if ($latest_query->have_posts()) {
-          $latest_query->the_post();
-          $latest_title = get_the_title();
-          if (has_post_thumbnail()) {
-              $latest_thumb = get_the_post_thumbnail_url(get_the_ID(), 'quterma-card-4x3');
-          }
-          wp_reset_postdata();
-      }
+      $latest_info  = isset($latest_posts_map[$cat->term_id]) ? $latest_posts_map[$cat->term_id] : null;
+      $latest_title = $latest_info ? $latest_info['title'] : '';
+      $latest_thumb = $latest_info ? $latest_info['thumb'] : '';
 
       $cat_desc = !empty($cat->description) ? $cat->description : '';
       if (empty($cat_desc)) {
@@ -136,7 +172,7 @@ foreach ($categories as $cat) {
       </a>
     <?php endforeach; ?>
   </div>
-</div>
+</main>
 
 <?php
 get_footer();

@@ -19,7 +19,7 @@ if (!$carousel_query->have_posts()) {
     return;
 }
 ?>
-<section class="carousel-section rev" aria-label="<?php esc_attr_e('Главные материалы', 'quterma'); ?>">
+<section class="carousel-section" aria-label="<?php esc_attr_e('Главные материалы', 'quterma'); ?>">
   <div class="wrap">
     <div class="hero-carousel" id="heroCarousel">
       <div class="hc-track" id="hcTrack">
@@ -31,7 +31,7 @@ if (!$carousel_query->have_posts()) {
             $date_str = quterma_format_date(get_the_ID(), false);
             $is_first = ($slide_index === 1);
         ?>
-          <div class="hc-slide">
+          <div class="hc-slide" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
             <?php if (has_post_thumbnail()) : 
                 $thumb_id  = get_post_thumbnail_id();
                 $photo_alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);

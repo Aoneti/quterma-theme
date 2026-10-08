@@ -4,18 +4,28 @@
    между редактором WordPress и витриной сайта.
    ================================================================ */
 
+@import url('local-fonts.css');
+
 :root {
-  --ink: #14100C;
-  --ink-2: #2E2720;
-  --ink-3: #5C5248;
+  --bg: #FAF8F3;
+  --paper: #F7F4EE;
+  --paper-2: #EDE9DE;
+  --paper-3: #E2DECE;
+  --ink: #16140F;
+  --ink-2: #47422F;
+  --ink-3: #635D4C;
   --ink-4: #8C8074;
+  --num-rest: #8C7F5A;
   --brand: #2E6B4E;
-  --brand-2: #1E4D36;
-  --accent: #B8431E;
-  --paper: #FAF8F3;
-  --paper-2: #F0EDE4;
-  --bd: #DDD8CE;
-  --bd-2: #E8E4DA;
+  --brand-2: #5CB584;
+  --brand-pale: #E9F5EE;
+  --accent: #8A5F0C;
+  --accent-2: #D9A43C;
+  --accent-pale: #FBF1DC;
+  --bd: #DAD4C6;
+  --bd-2: #EBE7DC;
+  --always-dk: #14150F;
+  --always-cr: #F2EFE5;
   --fd: 'Unbounded', -apple-system, sans-serif;
   --fg: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   --fs: 'PT Serif', Georgia, serif;
@@ -165,7 +175,7 @@ body, .editor-styles-wrapper {
 .editor-styles-wrapper .wp-block-image figcaption,
 .editor-styles-wrapper .wp-block-gallery figcaption {
   font-size: 13.5px;
-  color: var(--ink-4);
+  color: var(--ink-3);
   font-style: italic;
   line-height: 1.45;
   margin-top: 10px;

@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: События (Афиша API Культура.РФ)
+ * Template Name: Афиша событий
  * Description: Шаблон страницы афиши культурных событий с интеграцией API «Культура.РФ»
  *
  * @package Quterma
@@ -47,15 +47,26 @@ if ($has_events) {
 }
 ?>
 
-<div class="wrap">
+<main id="content" class="wrap">
   <div style="padding-top:28px">
     <?php get_template_part('template-parts/breadcrumbs'); ?>
-    <div class="page-header">
-      <h1 class="page-title"><?php the_title(); ?></h1>
-      <?php if (has_excerpt()) : ?>
-        <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
+    <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+      <div class="page-header">
+        <h1 class="page-title"><?php the_title(); ?></h1>
+        <?php if (has_excerpt()) : ?>
+          <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
+        <?php endif; ?>
+      </div>
+      <?php if (get_the_content()) : ?>
+        <div class="page-content rev" style="margin-bottom:28px">
+          <?php the_content(); ?>
+        </div>
       <?php endif; ?>
-    </div>
+    <?php endwhile; else : ?>
+      <div class="page-header">
+        <h1 class="page-title"><?php esc_html_e('События', 'quterma'); ?></h1>
+      </div>
+    <?php endif; ?>
   </div>
 
   <!-- ФИЛЬТРЫ ДАТЫ -->
@@ -122,8 +133,8 @@ if ($has_events) {
       <h3 class="empty-state-title" style="font-size:18px;font-weight:700;color:var(--ink);margin:0"><?php esc_html_e('Афиша обновляется', 'quterma'); ?></h3>
       <p class="empty-state-text"><?php esc_html_e('В данный момент афиша культурных событий Ярославской области синхронизируется. Загляните чуть позже или перейдите в ленту культурных новостей.', 'quterma'); ?></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
-        <a href="<?php echo esc_url(home_url('/category/culture/')); ?>" class="empty-state-btn"><?php esc_html_e('Культурный слой', 'quterma'); ?></a>
-        <a href="<?php echo esc_url(home_url('/news/')); ?>" class="empty-state-btn" style="background:var(--paper-2);color:var(--ink)"><?php esc_html_e('Все новости', 'quterma'); ?></a>
+        <a href="<?php echo esc_url(quterma_get_category_url('culture', home_url('/category/culture/'))); ?>" class="empty-state-btn"><?php esc_html_e('Культурный слой', 'quterma'); ?></a>
+        <a href="<?php echo esc_url(quterma_get_news_url()); ?>" class="empty-state-btn" style="background:var(--paper-2);color:var(--ink)"><?php esc_html_e('Все новости', 'quterma'); ?></a>
       </div>
     </div>
   <?php else : ?>
@@ -148,7 +159,7 @@ if ($has_events) {
       <button type="button" class="empty-state-btn" id="eventEmptyReset"><?php esc_html_e('Сбросить фильтры', 'quterma'); ?></button>
     </div>
   <?php endif; ?>
-</div>
+</main>
 
 <?php
 get_footer();

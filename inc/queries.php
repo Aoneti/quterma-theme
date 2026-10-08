@@ -2,6 +2,13 @@
 /**
  * Query optimizations, helper query functions, and category-driven blocks
  *
+ * Implements:
+ * - Deterministic, exact category and tag binding (zero fuzzy substring collisions)
+ * - Single-pass in-memory and transient cached taxonomy lookup map (quterma_get_taxonomy_lookup_map)
+ * - Optional Customizer bindings (theme_mod) for each homepage section
+ * - Protection against cascading empty blocks
+ * - Query optimization via pre_get_posts
+ *
  * @package Quterma
  */
 
@@ -10,125 +17,153 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Normalize string for bulletproof Russian and Latin matching:
- * lowercase UTF-8, replace 'ё' with 'е', remove spaces, hyphens and punctuation.
+ * Retrieve cached map of categories and tags indexed by exact slug and exact lowercase name.
+ * Loaded once per request (or cached in transient), eliminating repetitive full taxonomy queries.
  *
- * @param string $str
- * @return string
+ * @return array{categories: array<string, int>, tags: array<string, int>}
  */
-function quterma_normalize_term_str($str) {
-    if (empty($str)) {
-        return '';
+function quterma_get_taxonomy_lookup_map() {
+    static $memory_cache = null;
+    if ($memory_cache !== null) {
+        return $memory_cache;
     }
-    $str = urldecode((string) $str);
-    if (function_exists('mb_strtolower')) {
-        $str = mb_strtolower($str, 'UTF-8');
-    } else {
-        $str = strtolower($str);
+
+    $cached = get_transient('quterma_tax_lookup_map');
+    if (false !== $cached && is_array($cached)) {
+        $memory_cache = $cached;
+        return $memory_cache;
     }
-    // Standardize Russian letters
-    $str = str_replace('ё', 'е', $str);
-    // Strip everything except letters and digits
-    $str = preg_replace('/[^a-z0-9а-я]/u', '', $str);
-    return trim($str);
+
+    $map = array(
+        'categories' => array(), // slug/name => term_id
+        'tags'       => array(), // slug/name => term_id
+    );
+
+    $cats = get_categories(array('hide_empty' => false));
+    if (!empty($cats) && !is_wp_error($cats)) {
+        foreach ($cats as $cat) {
+            $cat_id = (int) $cat->term_id;
+            $slug   = sanitize_title($cat->slug);
+            $name   = function_exists('quterma_strtolower') ? quterma_strtolower(trim($cat->name)) : (function_exists('mb_strtolower') ? mb_strtolower(trim($cat->name), 'UTF-8') : strtolower(trim($cat->name)));
+            $map['categories'][$slug] = $cat_id;
+            $map['categories'][$name] = $cat_id;
+        }
+    }
+
+    $tags = get_terms(array('taxonomy' => 'post_tag', 'hide_empty' => false));
+    if (!empty($tags) && !is_wp_error($tags)) {
+        foreach ($tags as $tag) {
+            $tag_id = (int) $tag->term_id;
+            $slug   = sanitize_title($tag->slug);
+            $name   = function_exists('quterma_strtolower') ? quterma_strtolower(trim($tag->name)) : (function_exists('mb_strtolower') ? mb_strtolower(trim($tag->name), 'UTF-8') : strtolower(trim($tag->name)));
+            $map['tags'][$slug] = $tag_id;
+            $map['tags'][$name] = $tag_id;
+        }
+    }
+
+    set_transient('quterma_tax_lookup_map', $map, 12 * HOUR_IN_SECONDS);
+    $memory_cache = $map;
+    return $memory_cache;
 }
 
+// Invalidate taxonomy lookup cache on term modifications
+add_action('created_term', function () { delete_transient('quterma_tax_lookup_map'); });
+add_action('edited_term',  function () { delete_transient('quterma_tax_lookup_map'); });
+add_action('delete_term',  function () { delete_transient('quterma_tax_lookup_map'); });
+
 /**
- * Find matching category term IDs by keywords (supports Russian names, slugs, and Cyrillic slugs)
+ * Find matching category term IDs by explicit keywords or slugs.
+ * Uses strict exact matching (slug or exact normalized name), NO fuzzy substring matching.
  *
  * @param array|string $keywords
- * @return array Array of term IDs
+ * @return int[] Array of term IDs
  */
 function quterma_get_category_ids_by_terms($keywords) {
     if (!is_array($keywords)) {
-        $keywords = explode(',', $keywords);
+        $keywords = explode(',', (string) $keywords);
     }
 
-    $all_cats = get_categories(array('hide_empty' => false));
-    if (empty($all_cats) || is_wp_error($all_cats)) {
-        $all_cats = get_terms(array(
-            'taxonomy'   => 'category',
-            'hide_empty' => false,
-        ));
-    }
-    if (empty($all_cats) || is_wp_error($all_cats)) {
-        return array();
-    }
+    $map = quterma_get_taxonomy_lookup_map();
+    $matched = array();
 
-    $matched_ids = array();
-    $norm_kws = array();
     foreach ($keywords as $kw) {
-        $n = quterma_normalize_term_str($kw);
-        if (!empty($n)) {
-            $norm_kws[] = $n;
+        $kw = trim($kw);
+        if ($kw === '') {
+            continue;
         }
-    }
 
-    foreach ($all_cats as $cat) {
-        $n_name = quterma_normalize_term_str($cat->name);
-        $n_slug = quterma_normalize_term_str($cat->slug);
-
-        foreach ($norm_kws as $n_kw) {
-            if ($n_name === $n_kw ||
-                $n_slug === $n_kw ||
-                (!empty($n_name) && strpos($n_name, $n_kw) !== false) ||
-                (!empty($n_slug) && strpos($n_slug, $n_kw) !== false) ||
-                (!empty($n_name) && strpos($n_kw, $n_name) !== false)) {
-                $matched_ids[] = (int) $cat->term_id;
-                break;
+        // Direct numeric ID support
+        if (is_numeric($kw)) {
+            $term_id = (int) $kw;
+            if (term_exists($term_id, 'category')) {
+                $matched[] = $term_id;
+                continue;
             }
         }
+
+        $clean_slug = sanitize_title($kw);
+        $clean_name = function_exists('quterma_strtolower') ? quterma_strtolower($kw) : (function_exists('mb_strtolower') ? mb_strtolower($kw, 'UTF-8') : strtolower($kw));
+
+        if (isset($map['categories'][$clean_slug])) {
+            $matched[] = $map['categories'][$clean_slug];
+        } elseif (isset($map['categories'][$clean_name])) {
+            $matched[] = $map['categories'][$clean_name];
+        }
     }
-    return array_unique($matched_ids);
+
+    return array_values(array_unique(array_filter($matched)));
 }
 
 /**
- * Find matching tag term IDs by keywords (supports Russian names, slugs, and Cyrillic slugs)
+ * Find matching tag term IDs by explicit keywords or slugs.
+ * Uses strict exact matching (slug or exact normalized name), NO fuzzy substring matching.
  *
  * @param array|string $keywords
- * @return array Array of tag IDs
+ * @return int[] Array of tag IDs
  */
 function quterma_get_tag_ids_by_terms($keywords) {
     if (!is_array($keywords)) {
-        $keywords = explode(',', $keywords);
-    }
-    $all_tags = get_terms(array(
-        'taxonomy'   => 'post_tag',
-        'hide_empty' => false,
-    ));
-    if (empty($all_tags) || is_wp_error($all_tags)) {
-        return array();
+        $keywords = explode(',', (string) $keywords);
     }
 
-    $matched_ids = array();
-    $norm_kws = array();
+    $map = quterma_get_taxonomy_lookup_map();
+    $matched = array();
+
     foreach ($keywords as $kw) {
-        $n = quterma_normalize_term_str($kw);
-        if (!empty($n)) {
-            $norm_kws[] = $n;
+        $kw = trim($kw);
+        if ($kw === '') {
+            continue;
         }
-    }
 
-    foreach ($all_tags as $tag) {
-        $n_name = quterma_normalize_term_str($tag->name);
-        $n_slug = quterma_normalize_term_str($tag->slug);
-
-        foreach ($norm_kws as $n_kw) {
-            if ($n_name === $n_kw ||
-                $n_slug === $n_kw ||
-                (!empty($n_name) && strpos($n_name, $n_kw) !== false) ||
-                (!empty($n_slug) && strpos($n_slug, $n_kw) !== false) ||
-                (!empty($n_name) && strpos($n_kw, $n_name) !== false)) {
-                $matched_ids[] = (int) $tag->term_id;
-                break;
+        // Direct numeric ID support
+        if (is_numeric($kw)) {
+            $term_id = (int) $kw;
+            if (term_exists($term_id, 'post_tag')) {
+                $matched[] = $term_id;
+                continue;
             }
         }
+
+        $clean_slug = sanitize_title($kw);
+        $clean_name = function_exists('quterma_strtolower') ? quterma_strtolower($kw) : (function_exists('mb_strtolower') ? mb_strtolower($kw, 'UTF-8') : strtolower($kw));
+
+        if (isset($map['tags'][$clean_slug])) {
+            $matched[] = $map['tags'][$clean_slug];
+        } elseif (isset($map['tags'][$clean_name])) {
+            $matched[] = $map['tags'][$clean_name];
+        }
     }
-    return array_unique($matched_ids);
+
+    return array_values(array_unique(array_filter($matched)));
 }
 
 /**
- * Helper to build WP_Query arguments matching categories or tags
+ * Helper to build WP_Query arguments matching categories or tags deterministically.
+ *
+ * @param array|string $keywords
+ * @param int $limit
+ * @param array $exclude_ids
+ * @return array
  */
 function quterma_build_term_query_args($keywords, $limit, $exclude_ids = array()) {
     $cat_ids = quterma_get_category_ids_by_terms($keywords);
@@ -166,7 +201,7 @@ function quterma_build_term_query_args($keywords, $limit, $exclude_ids = array()
     }
 
     if (!empty($exclude_ids)) {
-        $args['post__not_in'] = $exclude_ids;
+        $args['post__not_in'] = array_map('intval', (array) $exclude_ids);
     }
 
     return $args;
@@ -174,15 +209,16 @@ function quterma_build_term_query_args($keywords, $limit, $exclude_ids = array()
 
 /**
  * Get hero carousel posts.
- * Category: 'Карусель' (slug 'karusel' or 'carousel').
- * Fallback: latest published posts if carousel category is empty.
+ * Category: customizable via Customizer or default 'carousel' / 'karusel'.
+ * Fallback: latest published posts.
  *
  * @param int $limit Number of slides (default 6).
  * @return WP_Query
  */
 function quterma_get_carousel_posts($limit = 6) {
-    // 1. Look for explicit carousel category/tag
-    $keywords = array('карусель', 'karusel', 'carousel', 'слайдер', 'slider');
+    $custom_cat = function_exists('quterma_get_setting') ? quterma_get_setting('quterma_home_carousel_cat', 'carousel') : get_theme_mod('quterma_home_carousel_cat', 'carousel');
+    $keywords   = array_filter(array($custom_cat, 'carousel', 'karusel', 'карусель'));
+
     $args = quterma_build_term_query_args($keywords, $limit);
 
     if (!empty($args['tax_query'])) {
@@ -192,7 +228,7 @@ function quterma_get_carousel_posts($limit = 6) {
         }
     }
 
-    // 2. Fallback: latest published posts
+    // Fallback: latest published posts
     $fallback_args = array(
         'post_type'           => 'post',
         'post_status'         => 'publish',
@@ -207,10 +243,10 @@ function quterma_get_carousel_posts($limit = 6) {
 
 /**
  * Get feed posts for homepage block "Все новости" / "Лента".
- * Returns latest published posts across all categories without category filtering.
+ * Returns latest published posts across all categories.
  *
  * @param int $limit Number of posts (default 8).
- * @param array $exclude_ids Array of IDs to exclude (e.g. from carousel).
+ * @param array $exclude_ids Array of IDs to exclude.
  * @return WP_Query
  */
 function quterma_get_feed_today_posts($limit = 8, $exclude_ids = array()) {
@@ -225,12 +261,11 @@ function quterma_get_feed_today_posts($limit = 8, $exclude_ids = array()) {
     );
 
     if (!empty($exclude_ids)) {
-        $args['post__not_in'] = (array) $exclude_ids;
+        $args['post__not_in'] = array_map('intval', (array) $exclude_ids);
     }
 
     $query = new WP_Query($args);
 
-    // If exclusions emptied the feed, query without exclusions
     if (!$query->have_posts() && !empty($exclude_ids)) {
         unset($args['post__not_in']);
         $query = new WP_Query($args);
@@ -241,37 +276,35 @@ function quterma_get_feed_today_posts($limit = 8, $exclude_ids = array()) {
 
 /**
  * Get "Культурный слой" posts.
- * Categories/Tags: 'Культурный слой', 'Культура' ('kulturnyj-sloj', 'kultura', 'culture').
+ * Deterministic binding to 'culture' / 'kulturnyj-sloj' (or Customizer setting).
  *
  * @param int $limit Number of posts (default 3).
  * @param array $exclude_ids Array of IDs to exclude.
  * @return WP_Query
  */
 function quterma_get_culture_layer_posts($limit = 3, $exclude_ids = array()) {
-    $keywords = array(
-        'культурный слой', 'культурный-слой', 'культура', 'culture', 'culture-layer',
-        'kulturnyj-sloj', 'kulturnyy-sloy', 'kulturny-sloy', 'kultura', 'культурный'
-    );
+    $custom_cat = function_exists('quterma_get_setting') ? quterma_get_setting('quterma_home_culture_cat', 'culture') : get_theme_mod('quterma_home_culture_cat', 'culture');
+    $keywords   = array_filter(array($custom_cat, 'culture', 'kulturnyj-sloj', 'kultura', 'культурный слой'));
 
     $args = quterma_build_term_query_args($keywords, $limit, $exclude_ids);
 
-    // If categories/tags were identified
     if (!empty($args['tax_query'])) {
         $query = new WP_Query($args);
-        // Guarantee section appears: if exclusions left it empty, show without exclusions!
         if (!$query->have_posts() && !empty($exclude_ids)) {
             unset($args['post__not_in']);
             $query = new WP_Query($args);
         }
-        return $query;
+        if ($query->have_posts()) {
+            return $query;
+        }
     }
 
-    // Direct fallback by common category names if term cache hasn't updated
+    // Fallback: direct query by category_name
     $fallback_args = array(
         'post_type'           => 'post',
         'post_status'         => 'publish',
         'posts_per_page'      => $limit,
-        'category_name'       => 'kulturnyj-sloj,culture-layer,kultura,culture',
+        'category_name'       => 'culture,kulturnyj-sloj,kultura',
         'ignore_sticky_posts' => true,
         'no_found_rows'       => true,
     );
@@ -280,18 +313,15 @@ function quterma_get_culture_layer_posts($limit = 3, $exclude_ids = array()) {
 
 /**
  * Get "Лонгриды и спецпроекты" posts.
- * Categories/Tags: 'Лонгриды', 'Спецпроекты', 'Лонгриды и спецпроекты'.
+ * Deterministic binding to 'specials' / 'longreads' (or Customizer setting).
  *
  * @param int $limit Number of posts (default 3).
  * @param array $exclude_ids Array of IDs to exclude.
  * @return WP_Query
  */
 function quterma_get_specials_posts($limit = 3, $exclude_ids = array()) {
-    $keywords = array(
-        'лонгриды и спецпроекты', 'спецпроекты и лонгриды', 'лонгриды', 'спецпроекты',
-        'лонгрид', 'спецпроект', 'longreads', 'specials', 'special', 'longread',
-        'longridy', 'spetsproekty', 'specproekty', 'longridy-i-spetsproekty'
-    );
+    $custom_cat = function_exists('quterma_get_setting') ? quterma_get_setting('quterma_home_specials_cat', 'specials') : get_theme_mod('quterma_home_specials_cat', 'specials');
+    $keywords   = array_filter(array($custom_cat, 'specials', 'longreads', 'spetsproekty', 'longridy', 'лонгриды и спецпроекты'));
 
     $args = quterma_build_term_query_args($keywords, $limit, $exclude_ids);
 
@@ -301,14 +331,16 @@ function quterma_get_specials_posts($limit = 3, $exclude_ids = array()) {
             unset($args['post__not_in']);
             $query = new WP_Query($args);
         }
-        return $query;
+        if ($query->have_posts()) {
+            return $query;
+        }
     }
 
     $fallback_args = array(
         'post_type'           => 'post',
         'post_status'         => 'publish',
         'posts_per_page'      => $limit,
-        'category_name'       => 'longridy,spetsproekty,longreads,specials',
+        'category_name'       => 'specials,longreads,spetsproekty,longridy',
         'ignore_sticky_posts' => true,
         'no_found_rows'       => true,
     );
@@ -317,17 +349,15 @@ function quterma_get_specials_posts($limit = 3, $exclude_ids = array()) {
 
 /**
  * Get "Кино и музыка" posts.
- * Categories/Tags: 'Кино и музыка', 'Кино', 'Музыка'.
+ * Deterministic binding to 'cinema-music' (or Customizer setting).
  *
  * @param int $limit Number of posts (default 4).
  * @param array $exclude_ids Array of IDs to exclude.
  * @return WP_Query
  */
 function quterma_get_cinema_music_posts($limit = 4, $exclude_ids = array()) {
-    $keywords = array(
-        'кино и музыка', 'кино-и-музыка', 'кино', 'музыка', 'cinema-music',
-        'kino-i-muzyka', 'kino', 'muzyka', 'cinema', 'music'
-    );
+    $custom_cat = function_exists('quterma_get_setting') ? quterma_get_setting('quterma_home_cinema_music_cat', 'cinema-music') : get_theme_mod('quterma_home_cinema_music_cat', 'cinema-music');
+    $keywords   = array_filter(array($custom_cat, 'cinema-music', 'kino-i-muzyka', 'кино и музыка'));
 
     $args = quterma_build_term_query_args($keywords, $limit, $exclude_ids);
 
@@ -337,14 +367,16 @@ function quterma_get_cinema_music_posts($limit = 4, $exclude_ids = array()) {
             unset($args['post__not_in']);
             $query = new WP_Query($args);
         }
-        return $query;
+        if ($query->have_posts()) {
+            return $query;
+        }
     }
 
     $fallback_args = array(
         'post_type'           => 'post',
         'post_status'         => 'publish',
         'posts_per_page'      => $limit,
-        'category_name'       => 'kino-i-muzyka,cinema-music,kino,muzyka',
+        'category_name'       => 'cinema-music,kino-i-muzyka,kino,muzyka',
         'ignore_sticky_posts' => true,
         'no_found_rows'       => true,
     );
@@ -353,16 +385,15 @@ function quterma_get_cinema_music_posts($limit = 4, $exclude_ids = array()) {
 
 /**
  * Get "Интервью" posts.
- * Category/Tag: 'Интервью' ('interview', 'interviews', 'intervyu', 'интервью', 'диалог').
+ * Deterministic binding to 'interview' (or Customizer setting).
  *
  * @param int $limit Number of posts (default 3).
  * @param array $exclude_ids Array of IDs to exclude.
  * @return WP_Query
  */
 function quterma_get_interview_posts($limit = 3, $exclude_ids = array()) {
-    $keywords = array(
-        'интервью', 'interview', 'interviews', 'intervyu', 'диалог', 'беседа'
-    );
+    $custom_cat = function_exists('quterma_get_setting') ? quterma_get_setting('quterma_home_interview_cat', 'interview') : get_theme_mod('quterma_home_interview_cat', 'interview');
+    $keywords   = array_filter(array($custom_cat, 'interview', 'intervyu', 'интервью'));
 
     $args = quterma_build_term_query_args($keywords, $limit, $exclude_ids);
 
@@ -372,10 +403,12 @@ function quterma_get_interview_posts($limit = 3, $exclude_ids = array()) {
             unset($args['post__not_in']);
             $query = new WP_Query($args);
         }
-        return $query;
+        if ($query->have_posts()) {
+            return $query;
+        }
     }
 
-    // Also check for meta _iv_person if category isn't set yet
+    // Check for _iv_person meta
     $meta_args = array(
         'post_type'           => 'post',
         'post_status'         => 'publish',
@@ -386,7 +419,7 @@ function quterma_get_interview_posts($limit = 3, $exclude_ids = array()) {
         'no_found_rows'       => true,
     );
     if (!empty($exclude_ids)) {
-        $meta_args['post__not_in'] = $exclude_ids;
+        $meta_args['post__not_in'] = array_map('intval', (array) $exclude_ids);
     }
     $query = new WP_Query($meta_args);
     if ($query->have_posts()) {
@@ -397,7 +430,7 @@ function quterma_get_interview_posts($limit = 3, $exclude_ids = array()) {
         'post_type'           => 'post',
         'post_status'         => 'publish',
         'posts_per_page'      => $limit,
-        'category_name'       => 'interview,interviews,intervyu',
+        'category_name'       => 'interview,intervyu',
         'ignore_sticky_posts' => true,
         'no_found_rows'       => true,
     );
@@ -406,20 +439,23 @@ function quterma_get_interview_posts($limit = 3, $exclude_ids = array()) {
 
 /**
  * Optimize main query via pre_get_posts.
+ * Explicitly separates search, editorial archives, and taxonomy archives.
  */
 function quterma_pre_get_posts($query) {
     if (is_admin() || !$query->is_main_query()) {
         return;
     }
 
-    // Search query optimizations
+    // 1. Search includes articles, static pages (sections), and venues
     if ($query->is_search()) {
-        $query->set('post_type', array('post', 'quterma_venue'));
+        $query->set('post_type', array('post', 'page', 'quterma_venue'));
         $query->set('posts_per_page', 10);
     }
 
-    // Category / Tag archives
-    if ($query->is_category() || $query->is_tag() || $query->is_archive()) {
+    // 2. Explicit pagination for editorial category and tag archives
+    if ($query->is_category() || $query->is_tag()) {
+        $query->set('posts_per_page', 12);
+    } elseif ($query->is_tax('quterma_city')) {
         $query->set('posts_per_page', 12);
     }
 }

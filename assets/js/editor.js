@@ -5,31 +5,46 @@
  * @package Quterma
  */
 (function (wp) {
-  if (!wp || !wp.plugins || !wp.editPost || !wp.element || !wp.components || !wp.data) {
+  if (!wp || !wp.plugins || !wp.element || !wp.components || !wp.data) {
     return;
   }
 
   var el = wp.element.createElement;
   var registerPlugin = wp.plugins.registerPlugin;
-  var PluginDocumentSettingPanel = wp.editPost.PluginDocumentSettingPanel;
+  var PluginDocumentSettingPanel =
+    (wp.editor && wp.editor.PluginDocumentSettingPanel) ||
+    (wp.editPost && wp.editPost.PluginDocumentSettingPanel);
+
+  if (!PluginDocumentSettingPanel) {
+    return;
+  }
+
   var TextControl = wp.components.TextControl;
   var useSelect = wp.data.useSelect;
   var useDispatch = wp.data.useDispatch;
 
   function QutermaEditorialPanel() {
-    var meta = useSelect(function (select) {
-      return select('core/editor').getEditedPostAttribute('meta') || {};
+    var currentPostType = useSelect(function (select) {
+      return (select('core/editor') && select('core/editor').getCurrentPostType)
+        ? select('core/editor').getCurrentPostType()
+        : null;
     }, []);
 
-    var editPost = useDispatch('core/editor').editPost;
+    // Only render for post and page, never for quterma_venue or other post types
+    if (currentPostType !== 'post' && currentPostType !== 'page') {
+      return null;
+    }
+
+    var meta = useSelect(function (select) {
+      return (select('core/editor') && select('core/editor').getEditedPostAttribute('meta')) || {};
+    }, []);
+
+    var editorDispatch = useDispatch('core/editor');
+    var editPost = editorDispatch ? editorDispatch.editPost : function () {};
 
     var person = meta._iv_person || '';
     var role = meta._iv_role || '';
     var subtitle = meta._page_subtitle || '';
-
-    var currentPostType = useSelect(function (select) {
-      return select('core/editor').getCurrentPostType();
-    }, []);
 
     return el(
       PluginDocumentSettingPanel,

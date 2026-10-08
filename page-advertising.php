@@ -23,7 +23,7 @@ while (have_posts()) : the_post();
     $content = get_the_content();
 ?>
 
-<div class="wrap">
+<main id="content" class="wrap">
   <div style="padding-top:28px">
     <?php get_template_part('template-parts/breadcrumbs'); ?>
 
@@ -120,7 +120,7 @@ while (have_posts()) : the_post();
       </a>
     </div>
   </div>
-</div>
+</main>
 
 <?php
 endwhile;

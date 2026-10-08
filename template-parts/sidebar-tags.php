@@ -35,7 +35,7 @@ $tags = get_tags(array(
         </a>
       <?php endforeach; ?>
     <?php else : ?>
-      <span style="font-size:13px;color:var(--ink-4)"><?php esc_html_e('Метки пока не добавлены', 'quterma'); ?></span>
+      <span style="font-size:13px;color:var(--ink-3)"><?php esc_html_e('Метки пока не добавлены', 'quterma'); ?></span>
     <?php endif; ?>
   </div>
 </div>

@@ -29,15 +29,8 @@ while (have_posts()) : the_post();
     $phone     = get_post_meta($post_id, '_venue_phone', true);
     $hours     = get_post_meta($post_id, '_venue_hours', true);
 
-    // Price explanations
-    $price_desc = '';
-    if ($price === '₽') {
-        $price_desc = 'До 500 ₽ · демократично';
-    } elseif ($price === '₽₽') {
-        $price_desc = '500 – 1 500 ₽ · средний чек';
-    } elseif ($price === '₽₽₽') {
-        $price_desc = 'От 1 500 ₽ · выше среднего';
-    }
+    // Price explanations from single source of truth
+    $price_desc = quterma_get_venue_price_desc($price);
 
     if (is_array($features)) {
         $features_list = $features;
@@ -67,6 +60,7 @@ while (have_posts()) : the_post();
     ));
 ?>
 
+<main id="content">
 <article id="venue-<?php the_ID(); ?>" <?php post_class('venue-single-page'); ?>>
   <div class="wrap" style="padding-top:24px">
     <div style="max-width:960px;margin-left:auto;margin-right:auto">
@@ -74,8 +68,12 @@ while (have_posts()) : the_post();
 
       <div class="page-header" style="padding-bottom:18px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-          <span class="venue-type-pill"><?php echo esc_html($type); ?></span>
-          <span class="venue-city-pill"><?php echo esc_html($city_name); ?></span>
+          <?php if (!empty($type)) : ?>
+            <span class="venue-type-pill"><?php echo esc_html($type); ?></span>
+          <?php endif; ?>
+          <?php if (!empty($city_name)) : ?>
+            <span class="venue-city-pill"><?php echo esc_html($city_name); ?></span>
+          <?php endif; ?>
           <?php if (!empty($price)) : ?>
             <span class="venue-price-pill" title="<?php echo esc_attr($price_desc); ?>"><?php echo esc_html($price); ?></span>
           <?php endif; ?>
@@ -84,31 +82,37 @@ while (have_posts()) : the_post();
       </div>
 
       <!-- ПРАКТИЧЕСКАЯ ИНФО-ПАНЕЛЬ ЗАВЕДЕНИЯ -->
+      <?php if (!empty($address) || !empty($hours) || !empty($price) || !empty($phone) || !empty($features_list)) : ?>
       <div class="venue-practical-panel rev">
         <div class="venue-practical-grid">
           <!-- 1. Адрес и Маршрут -->
+          <?php if (!empty($address)) : ?>
           <div class="vp-item vp-address-item">
             <div class="vp-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             </div>
             <div>
               <div class="vp-label"><?php esc_html_e('Адрес', 'quterma'); ?></div>
-              <div class="vp-val"><?php echo esc_html(!empty($address) ? $address : $city_name); ?></div>
+              <div class="vp-val"><?php echo esc_html($address); ?></div>
             </div>
           </div>
+          <?php endif; ?>
 
           <!-- 2. Часы работы -->
+          <?php if (!empty($hours)) : ?>
           <div class="vp-item">
             <div class="vp-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div>
               <div class="vp-label"><?php esc_html_e('Режим работы', 'quterma'); ?></div>
-              <div class="vp-val"><?php echo esc_html(!empty($hours) ? $hours : __('Уточняйте по телефону', 'quterma')); ?></div>
+              <div class="vp-val"><?php echo esc_html($hours); ?></div>
             </div>
           </div>
+          <?php endif; ?>
 
           <!-- 3. Средний чек -->
+          <?php if (!empty($price)) : ?>
           <div class="vp-item">
             <div class="vp-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
@@ -116,15 +120,17 @@ while (have_posts()) : the_post();
             <div>
               <div class="vp-label"><?php esc_html_e('Средний чек', 'quterma'); ?></div>
               <div class="vp-val">
-                <strong><?php echo esc_html(!empty($price) ? $price : '₽₽'); ?></strong>
+                <strong><?php echo esc_html($price); ?></strong>
                 <?php if (!empty($price_desc)) : ?>
                   <span class="vp-subval">(<?php echo esc_html($price_desc); ?>)</span>
                 <?php endif; ?>
               </div>
             </div>
           </div>
+          <?php endif; ?>
 
           <!-- 4. Телефон -->
+          <?php if (!empty($phone)) : ?>
           <div class="vp-item">
             <div class="vp-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -132,24 +138,23 @@ while (have_posts()) : the_post();
             <div>
               <div class="vp-label"><?php esc_html_e('Телефон', 'quterma'); ?></div>
               <div class="vp-val">
-                <?php if (!empty($phone)) : ?>
-                  <a href="tel:<?php echo esc_attr(preg_replace('/[^\d+]/', '', $phone)); ?>" class="vp-phone-link">
-                    <?php echo esc_html($phone); ?>
-                  </a>
-                <?php else : ?>
-                  <span style="color:var(--ink-3)"><?php esc_html_e('Не указан', 'quterma'); ?></span>
-                <?php endif; ?>
+                <a href="tel:<?php echo esc_attr(preg_replace('/[^\d+]/', '', $phone)); ?>" class="vp-phone-link">
+                  <?php echo esc_html($phone); ?>
+                </a>
               </div>
             </div>
           </div>
+          <?php endif; ?>
         </div>
 
         <!-- КНОПКИ ДЕЙСТВИЙ (ПОСТРОИТЬ МАРШРУТ, ПОЗВОНИТЬ, САЙТ) -->
         <div class="venue-actions-row">
+          <?php if (!empty($address) || !empty($city_name)) : ?>
           <a href="<?php echo esc_url($route_url); ?>" target="_blank" rel="noopener noreferrer" class="venue-btn-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
             <?php esc_html_e('Построить маршрут на карте', 'quterma'); ?>
           </a>
+          <?php endif; ?>
 
           <?php if (!empty($phone)) : ?>
             <a href="tel:<?php echo esc_attr(preg_replace('/[^\d+]/', '', $phone)); ?>" class="venue-btn-secondary">
@@ -177,6 +182,7 @@ while (have_posts()) : the_post();
           </div>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -224,6 +230,7 @@ while (have_posts()) : the_post();
   </div>
 </section>
 <?php endif; ?>
+</main>
 
 <?php
 endwhile;

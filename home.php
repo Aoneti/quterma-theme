@@ -28,7 +28,7 @@ $page_subtitle = $posts_page_id ? get_post_field('post_excerpt', $posts_page_id)
   </div>
 
   <div class="main-layout">
-    <main>
+    <main id="content">
       <?php if (have_posts()) : ?>
         <div class="news-list" id="newsList">
           <?php

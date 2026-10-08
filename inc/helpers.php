@@ -9,6 +9,24 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!function_exists('quterma_get_setting')) {
+    /**
+     * Retrieve theme/plugin setting from Options API with seamless fallback to theme_mod.
+     * Ensures settings remain intact when switching themes or using child themes.
+     *
+     * @param string $name
+     * @param mixed $default
+     * @return mixed
+     */
+    function quterma_get_setting($name, $default = '') {
+        $val = get_option($name, null);
+        if ($val !== null && $val !== '') {
+            return $val;
+        }
+        return get_theme_mod($name, $default);
+    }
+}
+
 /**
  * Russian plural forms helper.
  *
@@ -137,6 +155,49 @@ if (!function_exists('quterma_get_city_name')) {
     }
 }
 
+if (!function_exists('quterma_get_venue_price_tiers')) {
+    /**
+     * Canonical registry of venue price tiers (Single source of truth for admin, README, and public templates)
+     *
+     * @return array
+     */
+    function quterma_get_venue_price_tiers() {
+        return array(
+            '₽'   => array(
+                'symbol' => '₽',
+                'range'  => __('до 700 ₽', 'quterma'),
+                'desc'   => __('до 700 ₽ · демократично', 'quterma'),
+                'admin'  => __('демократично, до 700 ₽', 'quterma'),
+            ),
+            '₽₽'  => array(
+                'symbol' => '₽₽',
+                'range'  => __('700–1500 ₽', 'quterma'),
+                'desc'   => __('700–1500 ₽ · средний чек', 'quterma'),
+                'admin'  => __('средний чек, 700–1500 ₽', 'quterma'),
+            ),
+            '₽₽₽' => array(
+                'symbol' => '₽₽₽',
+                'range'  => __('от 1500 ₽', 'quterma'),
+                'desc'   => __('от 1500 ₽ · выше среднего', 'quterma'),
+                'admin'  => __('высокий чек, от 1500 ₽', 'quterma'),
+            ),
+        );
+    }
+}
+
+if (!function_exists('quterma_get_venue_price_desc')) {
+    /**
+     * Get venue price description by price symbol
+     *
+     * @param string $price
+     * @return string
+     */
+    function quterma_get_venue_price_desc($price) {
+        $tiers = quterma_get_venue_price_tiers();
+        return isset($tiers[$price]) ? $tiers[$price]['desc'] : '';
+    }
+}
+
 /**
  * Check if a category term is a technical/placement service category (e.g. "Все новости", "Карусель", "Лента")
  *
@@ -248,57 +309,114 @@ function quterma_get_primary_category($post = null) {
 }
 
 /**
- * Get cached URL for a page by slug without running raw SQL queries on every hit.
+ * Safe multibyte string helper functions with fallback if ext-mbstring is absent
+ */
+function quterma_strtolower($str) {
+    return function_exists('mb_strtolower') ? mb_strtolower($str, 'UTF-8') : strtolower($str);
+}
+
+function quterma_strpos($haystack, $needle, $offset = 0) {
+    return function_exists('mb_strpos') ? mb_strpos($haystack, $needle, $offset, 'UTF-8') : strpos($haystack, $needle, $offset);
+}
+
+function quterma_stripos($haystack, $needle, $offset = 0) {
+    return function_exists('mb_stripos') ? mb_stripos($haystack, $needle, $offset, 'UTF-8') : stripos($haystack, $needle, $offset);
+}
+
+/**
+ * Flush cached page and section URLs
+ */
+function quterma_flush_page_urls_cache() {
+    delete_option('quterma_page_urls');
+}
+add_action('save_post', 'quterma_flush_page_urls_cache');
+add_action('deleted_post', 'quterma_flush_page_urls_cache');
+add_action('trashed_post', 'quterma_flush_page_urls_cache');
+add_action('untrashed_post', 'quterma_flush_page_urls_cache');
+add_action('post_updated', 'quterma_flush_page_urls_cache');
+add_action('saved_term', 'quterma_flush_page_urls_cache');
+add_action('delete_term', 'quterma_flush_page_urls_cache');
+
+/**
+ * Get cached URL for a page or section by slug or template.
+ * Uses in-memory runtime memoization and a single autoloaded WP option ('quterma_page_urls').
+ * Negative lookups (fallbacks) are stored in the autoload array to eliminate repeating queries.
  *
- * @param string $slug Page path / slug.
+ * @param string $slug Page path / slug / template identifier.
  * @param string|null $fallback Custom fallback URL if page does not exist.
  * @return string
  */
 function quterma_get_page_url($slug, $fallback = null) {
+    static $memo = array();
+
     $clean_slug = sanitize_title($slug);
-    if ($fallback === null) {
-        $fallback = home_url('/' . $clean_slug . '/');
+    if (empty($clean_slug)) {
+        return home_url('/');
     }
 
-    $cache_key = 'quterma_purl_' . $clean_slug;
-    $cached_url = get_transient($cache_key);
-    if (false !== $cached_url && !empty($cached_url)) {
-        return $cached_url;
+    $default_fallback = ($fallback !== null) ? $fallback : home_url('/' . $clean_slug . '/');
+
+    // 1. Check runtime memory memoization
+    if (isset($memo[$clean_slug])) {
+        return $memo[$clean_slug];
     }
 
-    // 1. Check if a WordPress Page exists with this slug
-    $page = get_page_by_path($slug);
-    if ($page) {
-        $url = get_permalink($page);
-        set_transient($cache_key, $url, DAY_IN_SECONDS);
-        return $url;
+    // 2. Check autoloaded option array (1 read for all site sections, autoloaded with WP)
+    $cached_urls = get_option('quterma_page_urls');
+    if (!is_array($cached_urls)) {
+        $cached_urls = array();
     }
 
-    // 2. Check if a WordPress Category exists with this slug (e.g. culture, people, history)
-    $cat = get_category_by_slug($slug);
-    if ($cat) {
-        $url = get_category_link($cat);
-        set_transient($cache_key, $url, DAY_IN_SECONDS);
-        return $url;
+    if (isset($cached_urls[$clean_slug])) {
+        $memo[$clean_slug] = $cached_urls[$clean_slug];
+        return $cached_urls[$clean_slug];
     }
 
-    return $fallback;
-}
+    // 3. Resolve URL dynamically without hard dependency on slug
+    $resolved_url = '';
 
-// Bust page URL transients when a page or category is created, updated or deleted
-add_action('save_post_page', function ($post_id, $post) {
-    if ($post && !empty($post->post_name)) {
-        delete_transient('quterma_purl_' . sanitize_title($post->post_name));
+    // 3a. Template-first lookup: if page template matches, find page regardless of editor-changed slug
+    $template_file = 'page-' . $clean_slug . '.php';
+    $pages_by_template = get_posts(array(
+        'post_type'      => 'page',
+        'post_status'    => 'publish',
+        'posts_per_page' => 1,
+        'meta_key'       => '_wp_page_template',
+        'meta_value'     => $template_file,
+        'no_found_rows'  => true,
+    ));
+    if (!empty($pages_by_template)) {
+        $resolved_url = get_permalink($pages_by_template[0]);
     }
-}, 10, 2);
-add_action('saved_term', function ($term_id, $tt_id, $taxonomy) {
-    if ($taxonomy === 'category') {
-        $term = get_term($term_id, 'category');
-        if ($term && !is_wp_error($term)) {
-            delete_transient('quterma_purl_' . sanitize_title($term->slug));
+
+    // 3b. Slug lookup
+    if (empty($resolved_url)) {
+        $page = get_page_by_path($clean_slug);
+        if ($page && $page->post_status === 'publish') {
+            $resolved_url = get_permalink($page);
         }
     }
-}, 10, 3);
+
+    // 3c. Category lookup (e.g. culture, people, history, art)
+    if (empty($resolved_url)) {
+        $cat = get_category_by_slug($clean_slug);
+        if ($cat) {
+            $resolved_url = get_category_link($cat);
+        }
+    }
+
+    // 3d. Fallback if not found (Negative result)
+    if (empty($resolved_url)) {
+        $resolved_url = $default_fallback;
+    }
+
+    // 4. Save into autoload array and memoize (caches negative results as well)
+    $cached_urls[$clean_slug] = $resolved_url;
+    update_option('quterma_page_urls', $cached_urls, true);
+    $memo[$clean_slug] = $resolved_url;
+
+    return $resolved_url;
+}
 
 /**
  * Get dynamic URL for posts archive (Все новости / Лента)
@@ -590,27 +708,53 @@ function quterma_default_mobile_nav() {
 }
 
 /**
- * Safely highlight search terms in text
+ * Safely highlight search terms in text without breaking HTML entities
+ * Matches against raw text prior to HTML escaping so queries like "amp" or "nbsp" never corrupt entities.
  *
  * @param string $text
  * @param string $query
  * @return string
  */
 function quterma_highlight($text, $query) {
-    if (empty($query) || empty($text)) {
+    if (empty($text)) {
+        return '';
+    }
+    if (empty($query)) {
         return esc_html($text);
     }
-    $escaped_text = esc_html($text);
-    $escaped_query = trim($query);
-    $words = array_filter(preg_split('/\s+/u', $escaped_query));
+
+    $trimmed_query = trim($query);
+    $words = array_filter(preg_split('/\s+/u', $trimmed_query));
     if (empty($words)) {
-        return $escaped_text;
+        return esc_html($text);
     }
+
     $patterns = array_map(function ($w) {
-        return preg_quote(esc_html($w), '/');
+        return preg_quote($w, '/');
     }, $words);
     $pattern = '/(' . implode('|', $patterns) . ')/iu';
-    return preg_replace($pattern, '<mark class="srch-hl">$1</mark>', $escaped_text);
+
+    // Split raw text into matching terms and non-matching delimiters
+    $parts = preg_split($pattern, $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+    if ($parts === false || count($parts) <= 1) {
+        if (preg_match($pattern, $text)) {
+            return '<mark class="srch-hl">' . esc_html($text) . '</mark>';
+        }
+        return esc_html($text);
+    }
+
+    $result = '';
+    foreach ($parts as $part) {
+        if ($part === '') {
+            continue;
+        }
+        if (preg_match($pattern, $part)) {
+            $result .= '<mark class="srch-hl">' . esc_html($part) . '</mark>';
+        } else {
+            $result .= esc_html($part);
+        }
+    }
+    return $result;
 }
 
 /**
@@ -641,7 +785,26 @@ function quterma_typograf($text) {
 
     return $text;
 }
-add_filter('the_title', 'quterma_typograf', 10);
-add_filter('the_excerpt', 'quterma_typograf', 10);
-add_filter('single_post_title', 'quterma_typograf', 10);
+// Note: quterma_typograf() is intentionally NOT hooked globally to the_title or the_excerpt
+// to avoid leaking &nbsp; into <title>, alt, aria-label, JSON-LD, and menu walkers.
+
+/**
+ * Display typographed title in content templates without polluting global the_title filter.
+ *
+ * @param int|WP_Post $post
+ * @return void
+ */
+function quterma_the_title_typograf($post = 0) {
+    echo quterma_typograf(get_the_title($post));
+}
+
+/**
+ * Display typographed excerpt in content templates without polluting global the_excerpt filter.
+ *
+ * @param int|WP_Post $post
+ * @return void
+ */
+function quterma_the_excerpt_typograf($post = 0) {
+    echo quterma_typograf(get_the_excerpt($post));
+}
 

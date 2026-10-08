@@ -60,7 +60,7 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
 
     <!-- ДОПОЛНИТЕЛЬНЫЕ МАТЕРИАЛЫ С САЙДБАРОМ -->
     <div class="main-layout" style="padding-bottom:0">
-      <main>
+      <main id="content">
         <?php if (!empty($feed_posts)) : ?>
           <div class="sec-div" style="margin-top:0">
             <div class="sec-div-acc"></div>
@@ -93,7 +93,7 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
 
     <!-- 2. STANDARD FEED LAYOUT (Город, Общество, Экология, or paged Culture/History/People) -->
     <div class="main-layout">
-      <main>
+      <main id="content">
         <?php if (have_posts()) : ?>
           <div class="news-list" id="newsList">
             <?php

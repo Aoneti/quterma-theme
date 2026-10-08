@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: Гастрогид (Каталог заведений)
+ * Template Name: Гастрогид
  * Description: Шаблон страницы каталога заведений «Гастрогид» с фильтрацией по городам и кухням
  *
  * @package Quterma
@@ -12,10 +12,13 @@ if (!defined('ABSPATH')) {
 
 get_header();
 
+$paged        = (get_query_var('paged')) ? get_query_var('paged') : ((get_query_var('page')) ? get_query_var('page') : 1);
+$per_page     = apply_filters('quterma_gastroguide_per_page', -1);
 $venues_query = new WP_Query(array(
     'post_type'      => 'quterma_venue',
     'post_status'    => 'publish',
-    'posts_per_page' => -1,
+    'posts_per_page' => $per_page,
+    'paged'          => $paged,
     'orderby'        => 'menu_order title',
     'order'          => 'ASC',
     'no_found_rows'  => false,
@@ -47,15 +50,26 @@ if ($venues_query->have_posts()) {
 }
 ?>
 
-<div class="wrap">
+<main id="content" class="wrap">
   <div style="padding-top:28px">
     <?php get_template_part('template-parts/breadcrumbs'); ?>
-    <div class="page-header">
-      <h1 class="page-title"><?php the_title(); ?></h1>
-      <?php if (has_excerpt()) : ?>
-        <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
+    <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+      <div class="page-header">
+        <h1 class="page-title"><?php the_title(); ?></h1>
+        <?php if (has_excerpt()) : ?>
+          <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
+        <?php endif; ?>
+      </div>
+      <?php if (get_the_content()) : ?>
+        <div class="page-content rev" style="margin-bottom:28px">
+          <?php the_content(); ?>
+        </div>
       <?php endif; ?>
-    </div>
+    <?php endwhile; else : ?>
+      <div class="page-header">
+        <h1 class="page-title"><?php esc_html_e('Гастрогид', 'quterma'); ?></h1>
+      </div>
+    <?php endif; ?>
   </div>
 
   <!-- ФИЛЬТРЫ ГОРОДОВ И КНОПКА РАСШИРЕННЫХ ФИЛЬТРОВ -->
@@ -65,14 +79,14 @@ if ($venues_query->have_posts()) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <div class="filters" id="cityFilters">
-        <button type="button" class="filter active" data-city="all">
+        <button type="button" class="filter active" data-city="all" aria-pressed="true">
           <?php esc_html_e('Все города', 'quterma'); ?> <span class="filter-cnt">(<?php echo $total_venues; ?>)</span>
         </button>
         <?php foreach ($cities as $c_slug => $c_name) :
             $cnt = $city_counts[$c_slug] ?? 0;
             $empty_class = ($cnt === 0) ? ' is-empty' : '';
         ?>
-          <button type="button" class="filter<?php echo $empty_class; ?>" data-city="<?php echo esc_attr($c_slug); ?>" data-count="<?php echo $cnt; ?>">
+          <button type="button" class="filter<?php echo $empty_class; ?>" data-city="<?php echo esc_attr($c_slug); ?>" data-count="<?php echo $cnt; ?>" aria-pressed="false">
             <?php echo esc_html($c_name); ?> <span class="filter-cnt">(<?php echo $cnt; ?>)</span>
           </button>
         <?php endforeach; ?>
@@ -155,7 +169,7 @@ if ($venues_query->have_posts()) {
     <p class="empty-state-text"><?php esc_html_e('По выбранным параметрам заведений не найдено.', 'quterma'); ?></p>
     <button type="button" class="empty-state-btn" id="venueEmptyReset"><?php esc_html_e('Сбросить фильтры', 'quterma'); ?></button>
   </div>
-</div>
+</main>
 
 <?php
 get_footer();

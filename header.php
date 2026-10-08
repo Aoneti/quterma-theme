@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
-<a class="skip-link sr-only" href="#content"><?php esc_html_e('Перейти к основному содержанию', 'quterma'); ?></a>
+<a class="skip-link" href="#content"><?php esc_html_e('Перейти к основному содержанию', 'quterma'); ?></a>
 
 <div class="id-stripe"></div>
 
@@ -31,11 +31,7 @@ if (!defined('ABSPATH')) {
         </div>
       <?php else : ?>
         <a href="<?php echo esc_url(home_url('/')); ?>" class="masthead" rel="home">
-          <?php if (is_front_page() && !is_paged()) : ?>
-            <h1 class="masthead-logo"><?php bloginfo('name'); ?><span class="masthead-dot"></span></h1>
-          <?php else : ?>
-            <span class="masthead-logo"><?php bloginfo('name'); ?><span class="masthead-dot"></span></span>
-          <?php endif; ?>
+          <span class="masthead-logo"><?php bloginfo('name'); ?><span class="masthead-dot"></span></span>
         </a>
       <?php endif; ?>
 

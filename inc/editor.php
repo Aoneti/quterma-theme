@@ -169,7 +169,8 @@ function quterma_register_editorial_meta() {
 add_action('init', 'quterma_register_editorial_meta');
 
 /**
- * Add editorial meta boxes in WP Admin
+ * Add editorial meta boxes in WP Admin (Classic Editor fallback)
+ * Uses __back_compat_meta_box to hide from Block Editor where the native sidebar is used.
  */
 function quterma_add_editorial_meta_boxes() {
     // Interview fields on posts and pages
@@ -180,7 +181,8 @@ function quterma_add_editorial_meta_boxes() {
             'quterma_render_interview_meta_box',
             $screen,
             'normal',
-            'high'
+            'high',
+            array('__back_compat_meta_box' => true)
         );
     }
 
@@ -191,7 +193,8 @@ function quterma_add_editorial_meta_boxes() {
         'quterma_render_page_meta_box',
         'page',
         'normal',
-        'high'
+        'high',
+        array('__back_compat_meta_box' => true)
     );
 }
 add_action('add_meta_boxes', 'quterma_add_editorial_meta_boxes');
@@ -268,15 +271,21 @@ add_action('save_post', 'quterma_save_editorial_meta');
 
 /**
  * Enqueue Gutenberg Block Editor Sidebar assets
+ * Restricted to post and page post types.
  */
 function quterma_enqueue_block_editor_assets() {
+    $current_screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if ($current_screen && !in_array($current_screen->post_type, array('post', 'page'), true)) {
+        return;
+    }
+
     $asset_path = get_template_directory() . '/assets/js/editor.js';
     if (file_exists($asset_path)) {
         wp_enqueue_script(
             'quterma-editor-sidebar',
             get_template_directory_uri() . '/assets/js/editor.js',
-            array('wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data'),
-            defined('QUTERMA_VERSION') ? QUTERMA_VERSION : '2.1.0',
+            array('wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data'),
+            (string) filemtime($asset_path),
             true
         );
     }

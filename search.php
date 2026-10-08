@@ -62,7 +62,7 @@ $popular_rubrics = array(
   <?php endif; ?>
 
   <div class="main-layout">
-    <main>
+    <main id="content">
       <?php if (have_posts()) : ?>
         <div class="search-results-list" id="searchResultsList">
           <?php

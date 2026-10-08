@@ -8,22 +8,6 @@
 @font-face {
   font-family: 'Unbounded';
   font-style: normal;
-  font-weight: 200;
-  font-display: swap;
-  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-200.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Unbounded';
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-300.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Unbounded';
-  font-style: normal;
   font-weight: 400;
   font-display: swap;
   src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-regular.woff2') format('woff2');
@@ -56,28 +40,12 @@
 @font-face {
   font-family: 'Unbounded';
   font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-800.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Unbounded';
-  font-style: normal;
   font-weight: 900;
   font-display: swap;
   src: url('../fonts/unbounded-v12-cyrillic_cyrillic-ext_latin_latin-ext-900.woff2') format('woff2');
 }
 
 /* ===== 2. MANROPE (Основной UI, меню, метаданные, формы) ===== */
-@font-face {
-  font-family: 'Manrope';
-  font-style: normal;
-  font-weight: 200;
-  font-display: swap;
-  src: url('../fonts/manrope-v20-cyrillic_cyrillic-ext_latin_latin-ext-200.woff2') format('woff2');
-}
-
 @font-face {
   font-family: 'Manrope';
   font-style: normal;

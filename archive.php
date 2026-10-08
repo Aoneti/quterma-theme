@@ -9,12 +9,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// If this is the gastroguide CPT archive, route to page-gastroguide template
-if (is_post_type_archive('quterma_venue')) {
-    get_template_part('page', 'gastroguide');
-    return;
-}
-
 get_header();
 ?>
 
@@ -28,17 +22,21 @@ get_header();
   </div>
 
   <div class="main-layout">
-    <main>
+    <main id="content">
       <?php if (have_posts()) : ?>
         <div class="news-list" id="newsList">
           <?php
           $idx = 0;
           while (have_posts()) : the_post();
-              $idx++;
-              if ($idx === 1 && !is_paged()) {
-                  get_template_part('template-parts/content', 'featured');
+              if (get_post_type() === 'quterma_venue') {
+                  get_template_part('template-parts/content', 'venue');
               } else {
-                  get_template_part('template-parts/content', 'card');
+                  $idx++;
+                  if ($idx === 1 && !is_paged()) {
+                      get_template_part('template-parts/content', 'featured');
+                  } else {
+                      get_template_part('template-parts/content', 'card');
+                  }
               }
           endwhile;
           ?>

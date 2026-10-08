@@ -1,8 +1,7 @@
 <?php
 /**
- * Template Name: Интервью (Материал или архив)
- * Template Post Type: post, page
- * Description: Универсальный шаблон интервью: для отдельных материалов-диалогов и для архивного раздела
+ * Template Name: Интервью
+ * Description: Шаблон раздела интервью
  *
  * @package Quterma
  */
@@ -18,18 +17,19 @@ $iv_person  = get_post_meta($current_id, '_iv_person', true);
 $iv_role    = get_post_meta($current_id, '_iv_role', true);
 $sub        = get_post_meta($current_id, '_page_subtitle', true);
 $raw_content = get_post_field('post_content', $current_id);
-$has_substantive_content = !empty(trim(strip_tags($raw_content)));
 
 // Determine whether this page is a single interview material or a listing archive
-$is_single_interview = $has_substantive_content || !empty($iv_person) || !empty($iv_role) || (is_singular('post'));
+$is_single_interview = is_singular('post') || (!empty($iv_person) && !empty($iv_role));
 ?>
 
-<div class="wrap">
+<main id="content" class="wrap">
   <div style="padding-top:28px">
     <?php get_template_part('template-parts/breadcrumbs'); ?>
 
     <div class="page-header" style="max-width:860px">
-      <?php if ($is_single_interview && mb_strtolower(trim(get_the_title()), 'UTF-8') !== 'интервью') : ?>
+      <?php 
+      $raw_title_lower = function_exists('quterma_strtolower') ? quterma_strtolower(trim(get_the_title())) : (function_exists('mb_strtolower') ? mb_strtolower(trim(get_the_title()), 'UTF-8') : strtolower(trim(get_the_title())));
+      if ($is_single_interview && $raw_title_lower !== 'интервью') : ?>
         <div class="article-kicker kicker-interview">
           <?php esc_html_e('Интервью', 'quterma'); ?>
         </div>
@@ -98,7 +98,7 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
     $other_query = new WP_Query($other_args);
     if ($other_query->have_posts()) : ?>
       <div class="main-layout" style="margin-top:40px;margin-bottom:48px;padding-top:24px;border-top:1px solid var(--bd)">
-        <main>
+        <div class="main-content-col">
           <div class="sec-div" style="margin-top:0">
             <div class="sec-div-acc"></div>
             <h2 class="sec-div-title"><?php esc_html_e('Ещё интервью', 'quterma'); ?></h2>
@@ -130,12 +130,12 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
                   <?php if (!empty($p_role)) : ?>
                     <div class="iv-role"><?php echo esc_html($p_role); ?></div>
                   <?php endif; ?>
-                  <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 15, '…'); ?></p>
+                  <p class="iv-excerpt"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 15, '…')); ?></p>
                 </div>
               </a>
             <?php endwhile; wp_reset_postdata(); ?>
           </div>
-        </main>
+        </div>
       </div>
     <?php endif; ?>
 
@@ -154,7 +154,7 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
     ?>
 
     <div class="main-layout" style="margin-bottom:24px;padding-bottom:72px">
-      <main>
+      <div class="main-content-col">
         <?php if ($iv_archive_query->have_posts()) : ?>
           <div class="interview-grid rev" style="grid-template-columns:1fr 1fr;gap:22px">
             <?php while ($iv_archive_query->have_posts()) : $iv_archive_query->the_post();
@@ -182,7 +182,7 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
                   <?php if (!empty($custom_role)) : ?>
                     <div class="iv-role"><?php echo esc_html($custom_role); ?></div>
                   <?php endif; ?>
-                  <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 18, '…'); ?></p>
+                  <p class="iv-excerpt"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 18, '…')); ?></p>
                   <div class="iv-meta">
                     <span><?php echo quterma_time_tag(get_the_ID(), false); ?></span>
                     <span class="iv-meta-cta"><?php esc_html_e('Читать диалог →', 'quterma'); ?></span>
@@ -210,7 +210,7 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
             <a href="<?php echo esc_url(quterma_get_news_url()); ?>" class="empty-state-btn"><?php esc_html_e('Перейти в общую ленту', 'quterma'); ?></a>
           </div>
         <?php endif; ?>
-      </main>
+      </div>
 
       <aside class="sidebar">
         <?php get_template_part('template-parts/sidebar-popular'); ?>
@@ -218,7 +218,7 @@ $is_single_interview = $has_substantive_content || !empty($iv_person) || !empty(
       </aside>
     </div>
   <?php endif; ?>
-</div>
+</main>
 
 <?php
 get_footer();

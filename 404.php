@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 get_header();
 ?>
 
-<div class="err-wrap">
+<main id="content" class="err-wrap">
   <div class="err-inner rev on">
     <div class="err-scene">
       <span class="err-shape s1"></span>
@@ -30,7 +30,7 @@ get_header();
       <button type="button" class="btn-pill outline" onclick="document.getElementById('searchOpenBtn').click();"><?php esc_html_e('Поискать материал', 'quterma'); ?></button>
     </div>
   </div>
-</div>
+</main>
 
 <?php
 get_footer();

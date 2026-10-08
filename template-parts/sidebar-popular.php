@@ -19,9 +19,9 @@ $periods = array(
 $period_posts = array();
 $has_any_posts = false;
 foreach (array_keys($periods) as $pkey) {
-    $posts = quterma_get_popular_posts_by_period($pkey, 5);
-    $period_posts[$pkey] = $posts;
-    if (!empty($posts)) {
+    $popular_items = quterma_get_popular_posts_by_period($pkey, 5);
+    $period_posts[$pkey] = $popular_items;
+    if (!empty($popular_items)) {
         $has_any_posts = true;
     }
 }
@@ -48,9 +48,11 @@ if (!$has_any_posts) {
     $first = true;
     foreach ($periods as $pkey => $plabel) :
         $active_cls = $first ? ' active' : '';
+        $is_selected = $first ? 'true' : 'false';
+        $tabindex = $first ? '0' : '-1';
         $first = false;
     ?>
-      <button type="button" class="top-period-btn<?php echo esc_attr($active_cls); ?>" data-period="<?php echo esc_attr($pkey); ?>" role="tab" aria-selected="<?php echo $active_cls ? 'true' : 'false'; ?>">
+      <button type="button" class="top-period-btn<?php echo esc_attr($active_cls); ?>" id="tab-top-<?php echo esc_attr($pkey); ?>" data-period="<?php echo esc_attr($pkey); ?>" role="tab" aria-selected="<?php echo $is_selected; ?>" aria-controls="panel-top-<?php echo esc_attr($pkey); ?>" tabindex="<?php echo $tabindex; ?>">
         <?php echo esc_html($plabel); ?>
       </button>
     <?php endforeach; ?>
@@ -60,10 +62,11 @@ if (!$has_any_posts) {
   $first_list = true;
   foreach ($periods as $pkey => $plabel) :
       $display = $first_list ? 'flex' : 'none';
+      $is_hidden = !$first_list;
       $first_list = false;
       $current_list = !empty($period_posts[$pkey]) ? $period_posts[$pkey] : array();
   ?>
-    <div class="top-list" data-period="<?php echo esc_attr($pkey); ?>" style="display:<?php echo esc_attr($display); ?>">
+    <div class="top-list" id="panel-top-<?php echo esc_attr($pkey); ?>" role="tabpanel" aria-labelledby="tab-top-<?php echo esc_attr($pkey); ?>" data-period="<?php echo esc_attr($pkey); ?>" tabindex="0" style="display:<?php echo esc_attr($display); ?>"<?php if ($is_hidden) echo ' hidden'; ?>>
       <?php if (!empty($current_list)) : ?>
         <?php
         $index = 0;

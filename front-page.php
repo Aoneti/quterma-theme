@@ -23,7 +23,8 @@ if ($carousel_query->have_posts()) {
 }
 
 // 2. MAIN FEED AND SIDEBAR
-$feed_query = quterma_get_feed_today_posts(8, $exclude_ids);
+$feed_per_page = 6;
+$feed_query    = quterma_get_feed_today_posts($feed_per_page, $exclude_ids);
 if ($feed_query->have_posts()) {
     $exclude_ids = array_merge($exclude_ids, wp_list_pluck($feed_query->posts, 'ID'));
 }
@@ -49,9 +50,10 @@ $feed_url         = quterma_get_news_url();
 
 <div class="wrap">
   <div class="main-layout">
-    <main>
+    <main id="content">
+      <h1 class="sr-only"><?php bloginfo('name'); ?><?php if (get_bloginfo('description')) : ?> — <?php bloginfo('description'); ?><?php endif; ?></h1>
       <!-- ЛЕНТА -->
-      <div class="sec-div rev">
+      <div class="sec-div">
         <div class="sec-div-acc"></div>
         <h2 class="sec-div-title"><?php esc_html_e('Лента', 'quterma'); ?></h2>
         <div class="sec-div-line"></div>
@@ -72,7 +74,7 @@ $feed_url         = quterma_get_news_url();
                 $date_str  = quterma_format_date(get_the_ID(), true);
                 $is_lead   = ($feed_count === 1);
             ?>
-              <article class="news-card<?php echo $is_lead ? ' featured' : ''; ?>">
+              <article class="news-card<?php echo $is_lead ? ' featured' : ''; ?>" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
                 <div class="nc-img">
                   <?php if (has_post_thumbnail()) : ?>
                     <?php
@@ -91,7 +93,7 @@ $feed_url         = quterma_get_news_url();
                 <div class="nc-body">
                   <span class="sr-only"><?php echo esc_html($cat_info['name']); ?></span>
                   <h3 class="nc-title"><a href="<?php the_permalink(); ?>" class="card-permalink"><?php the_title(); ?></a></h3>
-                  <p class="nc-excerpt"><?php echo wp_trim_words(get_the_excerpt(), $is_lead ? 22 : 14, '…'); ?></p>
+                  <p class="nc-excerpt"><?php echo esc_html(wp_trim_words(get_the_excerpt(), $is_lead ? 22 : 14, '…')); ?></p>
                   <div class="nc-meta"><?php echo quterma_time_tag(get_the_ID(), true); ?></div>
                 </div>
               </article>
@@ -103,7 +105,12 @@ $feed_url         = quterma_get_news_url();
       </div>
 
       <?php if ($feed_query->max_num_pages > 1) : ?>
-        <button type="button" class="load-more" id="loadMoreBtn" data-page="1" data-max="<?php echo esc_attr($feed_query->max_num_pages); ?>" data-url="<?php echo esc_url($feed_url); ?>">
+        <button type="button" class="load-more" id="loadMoreBtn" 
+                data-page="1" 
+                data-max="<?php echo esc_attr($feed_query->max_num_pages); ?>" 
+                data-per-page="<?php echo esc_attr($feed_per_page); ?>"
+                data-exclude="<?php echo esc_attr(implode(',', $exclude_ids)); ?>"
+                data-url="<?php echo esc_url($feed_url); ?>">
           <span><?php esc_html_e('Показать ещё', 'quterma'); ?></span>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
@@ -155,7 +162,7 @@ $feed_url         = quterma_get_news_url();
           <div class="cc-body">
             <span class="sr-only"><?php echo esc_html($cat_info['name']); ?></span>
             <h3 class="cc-title"><a href="<?php the_permalink(); ?>" class="card-permalink"><?php the_title(); ?></a></h3>
-            <p class="cc-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 14, '…'); ?></p>
+            <p class="cc-excerpt"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 14, '…')); ?></p>
             <div class="cc-meta"><?php echo quterma_time_tag(get_the_ID(), false); ?></div>
           </div>
         </article>
@@ -315,7 +322,7 @@ $feed_url         = quterma_get_news_url();
           <div class="cm-body">
             <div class="cm-genre"><?php echo esc_html($cat_info['name']); ?></div>
             <h3 class="cm-title"><?php the_title(); ?></h3>
-            <p class="cm-desc"><?php echo wp_trim_words(get_the_excerpt(), 14, '…'); ?></p>
+            <p class="cm-desc"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 14, '…')); ?></p>
             <div class="cm-meta">
               <span class="cm-play-hint"><?php echo $is_music ? esc_html__('Слушать', 'quterma') : esc_html__('Читать', 'quterma'); ?> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
             </div>
@@ -374,7 +381,7 @@ if ($iv_query->have_posts()) :
               <?php endif; ?>
             </div>
             <h3 class="iv-title"><?php the_title(); ?></h3>
-            <p class="iv-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 14, '…'); ?></p>
+            <p class="iv-excerpt"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 14, '…')); ?></p>
             <div class="iv-meta">
               <span><?php echo quterma_time_tag(get_the_ID(), false); ?></span>
               <span class="iv-meta-cta"><?php esc_html_e('Читать диалог →', 'quterma'); ?></span>

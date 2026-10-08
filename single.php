@@ -54,7 +54,7 @@ while (have_posts()) : the_post();
         </div>
       <?php endif; ?>
 
-      <h1 class="article-headline"><?php the_title(); ?></h1>
+      <h1 class="article-headline"><?php quterma_the_title_typograf(); ?></h1>
 
       <?php if (!empty($lede)) : ?>
         <p class="article-lede"><?php echo esc_html($lede); ?></p>
@@ -63,7 +63,7 @@ while (have_posts()) : the_post();
       <div class="article-meta-row" style="border-top:1px solid var(--bd);margin-top:24px;padding-top:16px;display:flex;align-items:center;gap:10px;font-size:var(--t-xs)">
         <?php if (!empty($author_name)) : ?>
           <span class="article-meta-author" style="font-weight:700;color:var(--ink)"><?php echo esc_html($author_name); ?></span>
-          <span class="article-meta-sep" style="color:var(--ink-4)">·</span>
+          <span class="article-meta-sep" style="color:var(--num-rest)">·</span>
         <?php endif; ?>
         <span class="article-meta-date" style="color:var(--ink-3);font-weight:500"><?php echo quterma_time_tag(get_the_ID(), true); ?></span>
       </div>
@@ -81,7 +81,7 @@ while (have_posts()) : the_post();
         <?php the_post_thumbnail('quterma-hero', array(
             'loading'       => 'eager',
             'fetchpriority' => 'high',
-            'sizes'         => '(max-width: 768px) 100vw, 860px',
+            'sizes'         => function_exists('quterma_get_hero_image_sizes') ? quterma_get_hero_image_sizes() : '(max-width: 768px) 100vw, 860px',
             'alt'           => $final_alt,
         )); ?>
       </figure>
