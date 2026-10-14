@@ -69,11 +69,6 @@ if (!empty($valid_cat_ids)) {
     <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
       <div class="page-header">
         <h1 class="page-title"><?php the_title(); ?></h1>
-        <?php if (has_excerpt()) : ?>
-          <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
-        <?php else : ?>
-          <p class="page-subtitle"><?php esc_html_e('Тематические метки, разделы и специальные направления издания «Кутерьма».', 'quterma'); ?></p>
-        <?php endif; ?>
       </div>
       <?php if (get_the_content()) : ?>
         <div class="page-content rev" style="margin-bottom:28px">
@@ -83,7 +78,6 @@ if (!empty($valid_cat_ids)) {
     <?php endwhile; else : ?>
       <div class="page-header">
         <h1 class="page-title"><?php esc_html_e('Все темы и рубрики', 'quterma'); ?></h1>
-        <p class="page-subtitle"><?php esc_html_e('Тематические метки, разделы и специальные направления издания «Кутерьма».', 'quterma'); ?></p>
       </div>
     <?php endif; ?>
   </div>
@@ -116,7 +110,7 @@ if (!empty($valid_cat_ids)) {
   <div class="wrap">
     <div class="sec-div" style="margin-top:0">
       <div class="sec-div-acc"></div>
-      <h2 class="sec-div-title"><?php esc_html_e('Разделы издания', 'quterma'); ?></h2>
+      <h2 class="sec-div-title"><?php esc_html_e('Разделы', 'quterma'); ?></h2>
       <div class="sec-div-line"></div>
     </div>
   </div>

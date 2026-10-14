@@ -39,7 +39,7 @@ function quterma_customize_register($wp_customize) {
         'sanitize_callback' => 'esc_url_raw',
     ));
     $wp_customize->add_control('quterma_telegram', array(
-        'label'    => __('Telegram канал', 'quterma'),
+        'label'    => __('Telegram-канал', 'quterma'),
         'section'  => 'quterma_contacts_section',
         'type'     => 'url',
     ));
@@ -50,7 +50,7 @@ function quterma_customize_register($wp_customize) {
         'sanitize_callback' => 'esc_url_raw',
     ));
     $wp_customize->add_control('quterma_vk', array(
-        'label'    => __('Сообщество ВКонтакте', 'quterma'),
+        'label'    => __('ВКонтакте', 'quterma'),
         'section'  => 'quterma_contacts_section',
         'type'     => 'url',
     ));
@@ -61,31 +61,43 @@ function quterma_customize_register($wp_customize) {
         'sanitize_callback' => 'esc_url_raw',
     ));
     $wp_customize->add_control('quterma_dzen', array(
-        'label'    => __('Канал в Дзене', 'quterma'),
+        'label'    => __('Дзен', 'quterma'),
         'section'  => 'quterma_contacts_section',
         'type'     => 'url',
     ));
 
     $wp_customize->add_setting('quterma_email', array(
         'type'              => 'option',
-        'default'           => 'redaktsiya@quterma.ru',
+        'default'           => 'quterma@yandex.ru',
         'sanitize_callback' => 'sanitize_email',
     ));
     $wp_customize->add_control('quterma_email', array(
-        'label'    => __('Email редакции', 'quterma'),
+        'label'    => __('Email', 'quterma'),
         'section'  => 'quterma_contacts_section',
         'type'     => 'email',
     ));
 
     $wp_customize->add_setting('quterma_ad_email', array(
         'type'              => 'option',
-        'default'           => 'reklama@quterma.ru',
+        'default'           => 'quterma@yandex.ru',
         'sanitize_callback' => 'sanitize_email',
     ));
     $wp_customize->add_control('quterma_ad_email', array(
         'label'    => __('Email рекламного отдела', 'quterma'),
         'section'  => 'quterma_contacts_section',
         'type'     => 'email',
+    ));
+
+    $wp_customize->add_setting('quterma_support_url', array(
+        'type'              => 'option',
+        'default'           => '',
+        'sanitize_callback' => 'esc_url_raw',
+    ));
+    $wp_customize->add_control('quterma_support_url', array(
+        'label'       => __('Ссылка для кнопки «Поддержать редакцию»', 'quterma'),
+        'description' => __('Ссылка на страницу поддержки/донатов (открывается в новой вкладке). Оставьте пустой, если не используется.', 'quterma'),
+        'section'     => 'quterma_contacts_section',
+        'type'        => 'url',
     ));
 
     $wp_customize->add_setting('quterma_footer_about', array(
@@ -172,6 +184,30 @@ function quterma_customize_register($wp_customize) {
     $wp_customize->add_control('quterma_google_verification', array(
         'label'       => __('Код подтверждения Google Search Console', 'quterma'),
         'description' => __('Только код из метатега content="..."', 'quterma'),
+        'section'     => 'quterma_analytics_section',
+        'type'        => 'text',
+    ));
+
+    $wp_customize->add_setting('quterma_bing_verification', array(
+        'type'              => 'option',
+        'default'           => '',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+    $wp_customize->add_control('quterma_bing_verification', array(
+        'label'       => __('Код подтверждения Bing Webmaster Tools', 'quterma'),
+        'description' => __('Только код из метатега msvalidate.01 content="..."', 'quterma'),
+        'section'     => 'quterma_analytics_section',
+        'type'        => 'text',
+    ));
+
+    $wp_customize->add_setting('quterma_clarity_id', array(
+        'type'              => 'option',
+        'default'           => '',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+    $wp_customize->add_control('quterma_clarity_id', array(
+        'label'       => __('Microsoft Clarity (Project ID)', 'quterma'),
+        'description' => __('Идентификатор проекта в Microsoft Clarity', 'quterma'),
         'section'     => 'quterma_analytics_section',
         'type'        => 'text',
     ));

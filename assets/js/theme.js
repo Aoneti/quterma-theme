@@ -1221,7 +1221,8 @@
         url = new URL(baseEndpoint, window.location.origin);
       }
 
-      url.searchParams.set('page', nextPage);
+      // Always request page 1: exclude list already advances the query offset
+      url.searchParams.set('page', 1);
       url.searchParams.set('per_page', perPage);
       url.searchParams.set('_embed', '1');
       if (excludeIds.length > 0) {
@@ -1233,6 +1234,7 @@
         headers['X-WP-Nonce'] = window.qutermaSettings.nonce;
       }
 
+      var totalPages = 1;
       fetch(url.toString(), { headers: headers })
         .then(function (res) {
           if (!res.ok) {
@@ -1243,7 +1245,8 @@
           var totalPagesHeader = res.headers.get('X-WP-TotalPages');
           if (totalPagesHeader) {
             var tp = parseInt(totalPagesHeader, 10);
-            if (!isNaN(tp) && tp > 0) {
+            if (!isNaN(tp) && tp >= 0) {
+              totalPages = tp;
               maxPage = tp;
               btn.setAttribute('data-max', maxPage);
             }
@@ -1306,7 +1309,7 @@
             btn.setAttribute('data-page', nextPage);
             btn.setAttribute('data-exclude', excludeIds.join(','));
 
-            if (nextPage >= maxPage || posts.length < perPage || addedCount === 0) {
+            if (posts.length < perPage || totalPages <= 1 || addedCount === 0) {
               btn.style.display = 'none';
             }
           } else {
@@ -1365,6 +1368,37 @@
         keepalive: true,
         credentials: 'same-origin'
       }).catch(function () {});
+    }
+  })();
+
+  // 13. COOKIE CONSENT BANNER (152-FZ Compliance)
+  (function () {
+    var banner = document.getElementById('cookieBanner');
+    var acceptBtn = document.getElementById('cookieAcceptBtn');
+    if (!banner) return;
+
+    var consentKey = 'quterma_cookie_accepted';
+    try {
+      if (localStorage.getItem(consentKey)) {
+        banner.style.display = 'none';
+        return;
+      }
+    } catch (e) {}
+
+    setTimeout(function () {
+      banner.classList.add('visible');
+    }, 700);
+
+    if (acceptBtn) {
+      acceptBtn.addEventListener('click', function () {
+        banner.classList.remove('visible');
+        setTimeout(function () {
+          banner.style.display = 'none';
+        }, 350);
+        try {
+          localStorage.setItem(consentKey, '1');
+        } catch (e) {}
+      });
     }
   })();
 

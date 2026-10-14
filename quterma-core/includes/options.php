@@ -18,11 +18,20 @@ if (!function_exists('quterma_get_setting')) {
      * @return mixed
      */
     function quterma_get_setting($name, $default = '') {
+        static $settings_memo = array();
+        if (array_key_exists($name, $settings_memo)) {
+            return $settings_memo[$name];
+        }
+
         $val = get_option($name, null);
         if ($val !== null && $val !== '') {
+            $settings_memo[$name] = $val;
             return $val;
         }
-        return get_theme_mod($name, $default);
+
+        $res = get_theme_mod($name, $default);
+        $settings_memo[$name] = $res;
+        return $res;
     }
 }
 
@@ -35,6 +44,8 @@ if (!function_exists('quterma_migrate_theme_mods_to_options')) {
             'quterma_telegram',
             'quterma_vk',
             'quterma_email',
+            'quterma_dzen',
+            'quterma_ad_email',
             'quterma_footer_about',
             'quterma_marquee_text',
             'quterma_ym_id',
@@ -43,6 +54,9 @@ if (!function_exists('quterma_migrate_theme_mods_to_options')) {
             'quterma_yandex_verification',
             'quterma_google_verification',
             'quterma_liveinternet_enabled',
+            'quterma_bing_verification',
+            'quterma_clarity_id',
+            'quterma_support_url',
             'quterma_culture_api_url',
             'quterma_home_carousel_cat',
             'quterma_home_culture_cat',

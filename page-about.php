@@ -20,12 +20,13 @@ while (have_posts()) : the_post();
     if (empty($subtitle)) {
         $subtitle = __('Кутерьма — независимое городское медиа о Ярославле. Мы верим, что городу нужен голос, который не боится быть человечным.', 'quterma');
     }
-    $content  = get_the_content();
-    $email    = quterma_get_setting('quterma_email', 'redaktsiya@quterma.ru');
-    $telegram = quterma_get_setting('quterma_telegram', 'https://t.me/kuterma');
-    $vk       = quterma_get_setting('quterma_vk', 'https://vk.com/kuterma');
-    $dzen     = quterma_get_setting('quterma_dzen', 'https://dzen.ru/quterma');
-    $ad_url   = quterma_get_page_url('advertising', home_url('/advertising/'));
+    $content     = get_the_content();
+    $email       = quterma_get_setting('quterma_email', 'quterma@yandex.ru');
+    $support_url = quterma_get_setting('quterma_support_url', '');
+    $telegram    = quterma_get_setting('quterma_telegram', 'https://t.me/kuterma');
+    $vk          = quterma_get_setting('quterma_vk', 'https://vk.com/kuterma');
+    $dzen        = quterma_get_setting('quterma_dzen', 'https://dzen.ru/quterma');
+    $ad_url      = quterma_get_page_url('advertising', home_url('/advertising/'));
 ?>
 
 <main id="content" class="wrap">
@@ -34,9 +35,6 @@ while (have_posts()) : the_post();
 
     <div class="page-header">
       <h1 class="page-title"><?php the_title(); ?></h1>
-      <?php if (!empty($subtitle)) : ?>
-        <p class="page-subtitle"><?php echo esc_html($subtitle); ?></p>
-      <?php endif; ?>
     </div>
   </div>
 
@@ -85,8 +83,8 @@ while (have_posts()) : the_post();
       <?php esc_html_e('«Кутерьма» существует благодаря интересу читателей и принципиальной позиции: мы не зависим от бюджета и властей. Если вам близко то, что мы делаем, вы можете поддержать нашу работу информационно, оформить партнерство или поделиться нашими материалами.', 'quterma'); ?>
     </p>
     <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
-      <a href="mailto:<?php echo esc_attr($email); ?>?subject=<?php echo esc_attr(rawurlencode(__('Поддержка редакции «Кутерьма»', 'quterma'))); ?>" class="btn-pill" style="display:inline-block;background:var(--brand);color:#fff;padding:12px 24px;border-radius:999px;font-family:var(--fd);font-size:13px;font-weight:700;text-decoration:none">
-        <?php esc_html_e('Написать нам о поддержке', 'quterma'); ?>
+      <a href="<?php echo esc_url(!empty($support_url) ? $support_url : '#'); ?>" <?php if (!empty($support_url)) : ?>target="_blank" rel="noopener noreferrer"<?php endif; ?> class="btn-pill" style="display:inline-block;background:var(--brand);color:#fff;padding:12px 24px;border-radius:999px;font-family:var(--fd);font-size:13px;font-weight:700;text-decoration:none">
+        <?php esc_html_e('Поддержать редакцию', 'quterma'); ?>
       </a>
       <a href="<?php echo esc_url($ad_url); ?>" class="btn-pill" style="display:inline-block;border:1px solid var(--bd);background:var(--paper-2);color:var(--ink);padding:12px 24px;border-radius:999px;font-family:var(--fd);font-size:13px;font-weight:700;text-decoration:none">
         <?php esc_html_e('Реклама и партнёрство', 'quterma'); ?>

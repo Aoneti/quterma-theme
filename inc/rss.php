@@ -109,7 +109,8 @@ if (!function_exists('quterma_serve_cached_feed')) {
         $gmt_mtime = gmdate('D, d M Y H:i:s', $last_modified) . ' GMT';
 
         // Check If-None-Match (ETag)
-        if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH'], '"') === $etag) {
+        $inm = trim(wp_unslash($_SERVER['HTTP_IF_NONE_MATCH'] ?? ''), '"');
+        if ($inm !== '' && $inm === $etag) {
             status_header(304);
             exit;
         }
@@ -174,6 +175,8 @@ if (!function_exists('quterma_render_dzen_feed')) {
         'no_found_rows'  => true,
     ));
     while ($query->have_posts()) : $query->the_post();
+        $categories  = get_the_category();
+        $cat_name    = !empty($categories) ? $categories[0]->name : 'Город';
         $excerpt_raw = wp_strip_all_tags(get_the_excerpt());
         $content_raw = get_the_content_feed('rss2');
     ?>
@@ -181,8 +184,9 @@ if (!function_exists('quterma_render_dzen_feed')) {
         <title><?php the_title_rss(); ?></title>
         <link><?php the_permalink_rss(); ?></link>
         <guid isPermaLink="true"><?php the_permalink_rss(); ?></guid>
-        <pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
+        <pubDate><?php echo mysql2date('D, d M Y H:i:s O', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
         <dc:creator><?php the_author(); ?></dc:creator>
+        <category><?php echo esc_html($cat_name); ?></category>
         <description><![CDATA[<?php echo quterma_safe_cdata($excerpt_raw); ?>]]></description>
         <content:encoded><![CDATA[<?php echo quterma_safe_cdata($content_raw); ?>]]></content:encoded>
         <?php if (has_post_thumbnail()) :
@@ -232,14 +236,17 @@ if (!function_exists('quterma_render_dzen_news_feed')) {
     while ($query->have_posts()) : $query->the_post();
         $categories  = get_the_category();
         $cat_name    = !empty($categories) ? $categories[0]->name : 'Город';
-        $fulltext    = wp_strip_all_tags(strip_shortcodes(get_the_content()));
+        $fulltext    = wpautop(strip_shortcodes(get_the_content()));
         $excerpt_raw = wp_strip_all_tags(get_the_excerpt());
     ?>
     <item>
         <title><?php the_title_rss(); ?></title>
         <link><?php the_permalink_rss(); ?></link>
-        <pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
+        <guid isPermaLink="true"><?php the_permalink_rss(); ?></guid>
+        <pubDate><?php echo mysql2date('D, d M Y H:i:s O', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
+        <author><?php the_author(); ?></author>
         <category><?php echo esc_html($cat_name); ?></category>
+        <yandex:genre>message</yandex:genre>
         <yandex:full-text><![CDATA[<?php echo quterma_safe_cdata($fulltext); ?>]]></yandex:full-text>
         <description><![CDATA[<?php echo quterma_safe_cdata($excerpt_raw); ?>]]></description>
         <?php if (has_post_thumbnail()) :
@@ -286,13 +293,18 @@ if (!function_exists('quterma_render_rambler_feed')) {
         'no_found_rows'  => true,
     ));
     while ($query->have_posts()) : $query->the_post();
-        $fulltext    = wp_strip_all_tags(strip_shortcodes(get_the_content()));
+        $categories  = get_the_category();
+        $cat_name    = !empty($categories) ? $categories[0]->name : 'Город';
+        $fulltext    = wpautop(strip_shortcodes(get_the_content()));
         $excerpt_raw = wp_strip_all_tags(get_the_excerpt());
     ?>
     <item>
         <title><?php the_title_rss(); ?></title>
         <link><?php the_permalink_rss(); ?></link>
-        <pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
+        <guid isPermaLink="true"><?php the_permalink_rss(); ?></guid>
+        <pubDate><?php echo mysql2date('D, d M Y H:i:s O', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
+        <author><?php the_author(); ?></author>
+        <category><?php echo esc_html($cat_name); ?></category>
         <rambler:fulltext><![CDATA[<?php echo quterma_safe_cdata($fulltext); ?>]]></rambler:fulltext>
         <description><![CDATA[<?php echo quterma_safe_cdata($excerpt_raw); ?>]]></description>
         <?php if (has_post_thumbnail()) :

@@ -32,15 +32,13 @@ if (is_front_page()) {
     $cat = quterma_get_primary_category();
     if ($cat && !quterma_is_technical_category($cat)) :
     ?>
-      <a href="<?php echo esc_url(get_category_link($cat)); ?>"><?php echo esc_html($cat->name); ?></a>
-      <span class="bc-sep">/</span>
+      <span class="bc-current"><?php echo esc_html($cat->name); ?></span>
+    <?php else : ?>
+      <span class="bc-current"><?php esc_html_e('Все новости', 'quterma'); ?></span>
     <?php endif; ?>
-    <span class="bc-current"><?php the_title(); ?></span>
 
   <?php elseif (is_singular('quterma_venue')) : ?>
-    <a href="<?php echo esc_url(quterma_get_page_url('gastroguide', home_url('/gastroguide/'))); ?>"><?php esc_html_e('Гастрогид', 'quterma'); ?></a>
-    <span class="bc-sep">/</span>
-    <span class="bc-current"><?php the_title(); ?></span>
+    <span class="bc-current"><?php esc_html_e('Гастрогид', 'quterma'); ?></span>
 
   <?php elseif (is_category()) : ?>
     <span class="bc-current"><?php single_cat_title(); ?></span>

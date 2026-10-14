@@ -15,7 +15,7 @@ $privacy_url  = function_exists('get_privacy_policy_url') && get_privacy_policy_
 $legal_url    = quterma_get_page_url('legal', home_url('/legal/'));
 $editorial_url = quterma_get_page_url('editorial-policy', home_url('/editorial-policy/'));
 $support_url  = quterma_get_page_url('support', home_url('/about/#support'));
-$email        = quterma_get_setting('quterma_email', 'redaktsiya@quterma.ru');
+$email        = quterma_get_setting('quterma_email', 'quterma@yandex.ru');
 $telegram     = quterma_get_setting('quterma_telegram', 'https://t.me/kuterma');
 $vk           = quterma_get_setting('quterma_vk', 'https://vk.com/kuterma');
 $dzen         = quterma_get_setting('quterma_dzen', 'https://dzen.ru/quterma');
@@ -33,7 +33,6 @@ $marquee_text = quterma_get_setting('quterma_marquee_text', 'Что происх
       </div>
 
       <div class="foot-contact">
-        <div class="foot-col-title"><?php esc_html_e('Редакция и право', 'quterma'); ?></div>
         <div class="foot-links foot-links-grid">
           <?php
           if (has_nav_menu('footer')) {
@@ -49,7 +48,6 @@ $marquee_text = quterma_get_setting('quterma_marquee_text', 'Что происх
           ?>
             <div class="foot-links-col">
               <a href="<?php echo esc_url($ad_url); ?>" class="foot-link"><?php esc_html_e('Реклама и партнёрство', 'quterma'); ?></a>
-              <a href="<?php echo esc_url($support_url); ?>" class="foot-link"><?php esc_html_e('Поддержать редакцию', 'quterma'); ?></a>
               <a href="<?php echo esc_url($editorial_url); ?>" class="foot-link"><?php esc_html_e('Редакционная политика', 'quterma'); ?></a>
             </div>
             <div class="foot-links-col">
@@ -139,6 +137,23 @@ $marquee_text = quterma_get_setting('quterma_marquee_text', 'Что происх
 <button type="button" class="scroll-top" id="scrollTopBtn" aria-label="<?php esc_attr_e('Наверх', 'quterma'); ?>">
   <svg viewBox="0 0 24 24" fill="none"><polyline points="18 15 12 9 6 15"/></svg>
 </button>
+
+<!-- COOKIE CONSENT BANNER -->
+<div class="cookie-banner" id="cookieBanner" role="region" aria-label="<?php esc_attr_e('Уведомление об использовании cookie', 'quterma'); ?>">
+  <div class="cookie-banner-inner">
+    <div class="cookie-banner-text">
+      <?php printf(
+        esc_html__('Мы используем файлы cookie и аналитику для улучшения работы сайта. Оставаясь на сайте, вы соглашаетесь с %s.', 'quterma'),
+        '<a href="' . esc_url($privacy_url) . '">' . esc_html__('Политикой конфиденциальности', 'quterma') . '</a>'
+      ); ?>
+    </div>
+    <div class="cookie-banner-actions">
+      <button type="button" class="cookie-btn" id="cookieAcceptBtn">
+        <?php esc_html_e('Понятно', 'quterma'); ?>
+      </button>
+    </div>
+  </div>
+</div>
 
 <?php wp_footer(); ?>
 </body>

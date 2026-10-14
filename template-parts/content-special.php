@@ -92,7 +92,7 @@ if (empty($badge_text)) {
     $badge_text = ($content_words >= 600) ? __('Лонгрид', 'quterma') : __('Спецпроект', 'quterma');
 }
 ?>
-<article class="spec-card">
+<article class="spec-card" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
   <div class="spec-media">
     <div class="spec-badge"><?php echo esc_html($badge_text); ?></div>
     <?php if (has_post_thumbnail()) : ?>

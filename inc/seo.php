@@ -165,48 +165,104 @@ if (!function_exists('quterma_output_schema_json_ld')) {
 
         // 3. NewsArticle for single posts
         if (is_singular('post')) {
-            $post = get_post();
-            $author_name = quterma_clean_seo_text(get_the_author_meta('display_name', $post->post_author));
+            $post        = get_post();
+            $author_id   = $post->post_author;
+            $author_name = quterma_clean_seo_text(get_the_author_meta('display_name', $author_id));
+            $author_url  = get_author_posts_url($author_id);
             $headline    = quterma_clean_seo_text(get_the_title($post));
             $excerpt     = !empty($post->post_excerpt) ? $post->post_excerpt : wp_trim_words($post->post_content, 30);
             $description = quterma_clean_seo_text($excerpt);
+            $permalink   = get_permalink($post);
 
+            // Publisher logo
+            $publisher_logo = !empty($org_schema['logo']) ? $org_schema['logo'] : '';
+            if (empty($publisher_logo) && has_custom_logo()) {
+                $logo_id = get_theme_mod('custom_logo');
+                $publisher_logo = wp_get_attachment_image_url($logo_id, 'full');
+            }
             $publisher = array(
                 '@type' => 'Organization',
                 'name'  => $site_name,
+                'url'   => $home_url,
             );
-            if (!empty($org_schema['logo'])) {
+            if (!empty($publisher_logo)) {
                 $publisher['logo'] = array(
                     '@type' => 'ImageObject',
-                    'url'   => $org_schema['logo'],
+                    'url'   => $publisher_logo,
                 );
             }
 
+            // Category & Article Section
+            $primary_cat = function_exists('quterma_get_primary_category') ? quterma_get_primary_category($post) : null;
+            if (!$primary_cat) {
+                $post_cats = get_the_category($post->ID);
+                $primary_cat = !empty($post_cats) ? $post_cats[0] : null;
+            }
+            $article_section = ($primary_cat && !empty($primary_cat->name)) ? quterma_clean_seo_text($primary_cat->name) : 'Новости';
+
+            // Word count
+            $clean_body = wp_strip_all_tags($post->post_content);
+            $words_arr = preg_split('/\s+/u', $clean_body, -1, PREG_SPLIT_NO_EMPTY);
+            $word_count = is_array($words_arr) ? count($words_arr) : 0;
+
             $article_schema = array(
-                '@context'         => 'https://schema.org',
-                '@type'            => 'NewsArticle',
-                'mainEntityOfPage' => array(
+                '@context'            => 'https://schema.org',
+                '@type'               => 'NewsArticle',
+                'mainEntityOfPage'    => array(
                     '@type' => 'WebPage',
-                    '@id'   => get_permalink($post),
+                    '@id'   => $permalink,
                 ),
-                'headline'         => $headline,
-                'description'      => $description,
-                'datePublished'    => get_the_date('c', $post),
-                'dateModified'     => get_the_modified_date('c', $post),
-                'author'           => array(
+                'url'                 => $permalink,
+                'headline'            => $headline,
+                'description'         => $description,
+                'articleSection'      => $article_section,
+                'inLanguage'          => 'ru',
+                'isAccessibleForFree' => true,
+                'datePublished'       => get_the_date('c', $post),
+                'dateModified'        => get_the_modified_date('c', $post),
+                'author'              => array(
                     '@type' => 'Person',
                     'name'  => $author_name,
+                    'url'   => $author_url,
                 ),
-                'publisher'        => $publisher,
+                'publisher'           => $publisher,
             );
 
+            if ($word_count > 0) {
+                $article_schema['wordCount'] = $word_count;
+            }
+
+            // Tags / Keywords
+            $post_tags = get_the_tags($post->ID);
+            if (!empty($post_tags) && is_array($post_tags)) {
+                $tag_names = array();
+                foreach ($post_tags as $pt) {
+                    $cleaned_tag = quterma_clean_seo_text($pt->name);
+                    if (!empty($cleaned_tag)) {
+                        $tag_names[] = $cleaned_tag;
+                    }
+                }
+                if (!empty($tag_names)) {
+                    $article_schema['keywords'] = implode(', ', $tag_names);
+                }
+            }
+
+            // Image with dimensions
             if (has_post_thumbnail($post)) {
-                $thumb_url = get_the_post_thumbnail_url($post, 'full');
-                if ($thumb_url) {
-                    $article_schema['image'] = array(
-                        '@type' => 'ImageObject',
-                        'url'   => $thumb_url,
+                $thumb_id  = get_post_thumbnail_id($post);
+                $thumb_src = wp_get_attachment_image_src($thumb_id, 'full');
+                if ($thumb_src && !empty($thumb_src[0])) {
+                    $img_obj = array(
+                        '@type'  => 'ImageObject',
+                        'url'    => $thumb_src[0],
                     );
+                    if (!empty($thumb_src[1])) {
+                        $img_obj['width'] = (int) $thumb_src[1];
+                    }
+                    if (!empty($thumb_src[2])) {
+                        $img_obj['height'] = (int) $thumb_src[2];
+                    }
+                    $article_schema['image'] = $img_obj;
                 }
             }
 

@@ -21,6 +21,10 @@ while (have_posts()) : the_post();
         $subtitle = __('Кутерьму читают горожане, которым интересен их город — это лучшая аудитория для локального бизнеса и партнёров, которые говорят на одном языке с городом.', 'quterma');
     }
     $content = get_the_content();
+    $ad_email = function_exists('quterma_get_setting') ? quterma_get_setting('quterma_ad_email', 'quterma@yandex.ru') : get_option('quterma_ad_email', 'quterma@yandex.ru');
+    if (empty($ad_email)) {
+        $ad_email = 'quterma@yandex.ru';
+    }
 ?>
 
 <main id="content" class="wrap">
@@ -29,9 +33,6 @@ while (have_posts()) : the_post();
 
     <div class="page-header">
       <h1 class="page-title"><?php the_title(); ?></h1>
-      <?php if (!empty($subtitle)) : ?>
-        <p class="page-subtitle"><?php echo esc_html($subtitle); ?></p>
-      <?php endif; ?>
     </div>
   </div>
 
@@ -112,10 +113,9 @@ while (have_posts()) : the_post();
     <div>
       <div class="foot-brand-name" style="color:var(--ink);font-size:var(--t-xl)"><?php esc_html_e('Обсудить проект', 'quterma'); ?></div>
       <p style="font-size:var(--t-sm);color:var(--ink-3);margin-top:8px;max-width:480px"><?php esc_html_e('Напишите нам о вашем бренде, задаче и желаемых сроках — мы подготовим предложение с медиакитом и ценами в течение рабочего дня.', 'quterma'); ?></p>
-      <a href="mailto:quterma@yandex.ru" style="display:inline-block;margin-top:14px;font-weight:700;color:var(--brand);font-size:var(--t-sm)">quterma@yandex.ru</a>
     </div>
     <div>
-      <a href="mailto:quterma@yandex.ru?subject=Реклама%20в%20Кутерьме" class="btn-pill" style="display:inline-block;background:var(--brand);color:#fff;padding:12px 24px;border-radius:999px;font-family:var(--fd);font-size:13px;font-weight:700;text-decoration:none">
+      <a href="mailto:<?php echo esc_attr($ad_email); ?>?subject=<?php echo esc_attr(rawurlencode(__('Реклама в Кутерьме', 'quterma'))); ?>" class="btn-pill" style="display:inline-block;background:var(--brand);color:#fff;padding:12px 24px;border-radius:999px;font-family:var(--fd);font-size:13px;font-weight:700;text-decoration:none">
         <?php esc_html_e('Написать на почту →', 'quterma'); ?>
       </a>
     </div>

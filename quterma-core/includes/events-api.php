@@ -117,18 +117,22 @@ if (!function_exists('quterma_sync_culture_events')) {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
-        if (!isset($data['events']) || !is_array($data['events'])) {
-            $err_msg = 'Invalid response schema: missing events array';
+        $events_batch = isset($data['events']) && is_array($data['events'])
+            ? $data['events']
+            : (isset($data['items']) && is_array($data['items']) ? $data['items'] : (is_array($data) && isset($data[0]) ? $data : null));
+
+        if (!is_array($events_batch)) {
+            $err_msg = 'Invalid response schema: missing events/items array';
             error_log('[Quterma Events API] ' . $err_msg);
             update_option('quterma_culture_events_last_error', $err_msg, false);
             break;
         }
 
-        if (empty($data['events'])) {
+        if (empty($events_batch)) {
             break;
         }
 
-        foreach ($data['events'] as $item) {
+        foreach ($events_batch as $item) {
             if (!is_array($item)) continue;
             $ev = quterma_normalize_culture_event($item);
             if ($ev) {
@@ -136,7 +140,7 @@ if (!function_exists('quterma_sync_culture_events')) {
             }
         }
 
-        if (count($data['events']) < $limit_per_page) {
+        if (count($events_batch) < $limit_per_page) {
             $has_more = false;
         } else {
             $offset += $limit_per_page;
@@ -248,11 +252,15 @@ function quterma_normalize_culture_event($item) {
         return null;
     }
 
-    if (empty($item['start'])) {
+    if (empty($item['start']) && empty($item['startDate'])) {
         return null;
     }
+    if (empty($item['start'])) {
+        $raw_start = $item['startDate'];
+    } else {
+        $raw_start = $item['start'];
+    }
 
-    $raw_start = $item['start'];
     $timestamp = 0;
     if (is_numeric($raw_start)) {
         $num = (float) $raw_start;
@@ -277,26 +285,48 @@ function quterma_normalize_culture_event($item) {
     $place_name = '';
     $city_name  = 'Ярославль';
 
-    if (!empty($item['places'][0]) && is_array($item['places'][0])) {
-        $p = $item['places'][0];
+    $p = !empty($item['places'][0]) && is_array($item['places'][0])
+        ? $item['places'][0]
+        : (!empty($item['place']) && is_array($item['place']) ? $item['place'] : null);
+
+    if ($p) {
         $place_name = !empty($p['name']) ? $p['name'] : '';
         if (!empty($p['locale']['name'])) {
             $city_name = $p['locale']['name'];
         } elseif (!empty($p['address']['city'])) {
             $city_name = $p['address']['city'];
+        } elseif (!empty($p['city'])) {
+            $city_name = is_array($p['city']) ? ($p['city']['name'] ?? 'Ярославль') : $p['city'];
         }
     }
 
-    $category_name = !empty($item['category']['name']) ? $item['category']['name'] : __('Событие', 'quterma');
-    $image_url = !empty($item['image']['url']) ? $item['image']['url'] : '';
+    if (!empty($item['category']['name'])) {
+        $category_name = $item['category']['name'];
+    } elseif (is_string($item['category'] ?? null)) {
+        $category_name = $item['category'];
+    } elseif (!empty($item['tags'][0]['name'])) {
+        $category_name = $item['tags'][0]['name'];
+    } else {
+        $category_name = __('Событие', 'quterma');
+    }
+
+    $image_url = '';
+    if (!empty($item['image']['url'])) {
+        $image_url = $item['image']['url'];
+    } elseif (!empty($item['images'][0]['url'])) {
+        $image_url = $item['images'][0]['url'];
+    } elseif (is_string($item['image'] ?? null)) {
+        $image_url = $item['image'];
+    }
 
     $tokens = quterma_classify_when_tokens($timestamp);
     $event_id = !empty($item['_id']) ? (string) $item['_id'] : (!empty($item['id']) ? (string) $item['id'] : uniqid('ev_', true));
     $ext_url  = !empty($item['externalUrl']) ? $item['externalUrl'] : (!empty($item['url']) ? $item['url'] : '#');
+    $event_title = !empty($item['name']) ? $item['name'] : (!empty($item['title']) ? $item['title'] : '');
 
     return array(
         'id'          => $event_id,
-        'name'        => !empty($item['name']) ? $item['name'] : '',
+        'name'        => $event_title,
         'type'        => $category_name,
         'city_name'   => $city_name,
         'city_slug'   => quterma_slugify_city($city_name),
@@ -387,21 +417,18 @@ if (!function_exists('quterma_slugify_city')) {
  */
 function quterma_slugify_city($city_name) {
     $map = array(
-        'Ярославль'            => 'yaroslavl',
-        'Рыбинск'              => 'rybinsk',
-        'Ростов'               => 'rostov',
         'Ростов Великий'       => 'rostov',
+        'Ростов'               => 'rostov',
         'Переславль-Залесский' => 'pereslavl',
         'Переславль'           => 'pereslavl',
-        'Тутаев'               => 'tutaev',
-        'Углич'                => 'uglich',
-        'Гаврилов-Ям'          => 'gavrilov-yam',
-        'Данилов'              => 'danilov',
-        'Любим'                => 'lyubim',
-        'Мышкин'               => 'myshkin',
-        'Пошехонье'            => 'poshekhonye',
-        'Брейтово'             => 'breytovo',
     );
+    if (function_exists('quterma_get_cities')) {
+        foreach (quterma_get_cities() as $slug => $ru_name) {
+            if (!isset($map[$ru_name])) {
+                $map[$ru_name] = $slug;
+            }
+        }
+    }
     $stripos_fn = function_exists('quterma_stripos') ? 'quterma_stripos' : (function_exists('mb_stripos') ? 'mb_stripos' : 'stripos');
     foreach ($map as $ru => $slug) {
         if ($stripos_fn($city_name, $ru) !== false) {

@@ -20,6 +20,10 @@ if (!function_exists('quterma_output_verification_tags')) {
         if (!empty($google_search)) {
             echo '<meta name="google-site-verification" content="' . esc_attr($google_search) . '">' . "\n";
         }
+        $bing_search = quterma_get_setting('quterma_bing_verification', '');
+        if (!empty($bing_search)) {
+            echo '<meta name="msvalidate.01" content="' . esc_attr($bing_search) . '">' . "\n";
+        }
     }
     add_action('wp_head', 'quterma_output_verification_tags', 1);
 }
@@ -67,6 +71,22 @@ if (!function_exists('quterma_output_analytics_head')) {
             </script>
             <noscript><div><img src="https://mc.yandex.ru/watch/<?php echo esc_attr($ym_id); ?>" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
             <!-- /Yandex.Metrika counter -->
+            <?php
+        }
+
+        $clarity_id = quterma_get_setting('quterma_clarity_id', '');
+        if (!empty($clarity_id)) {
+            $clarity_id = preg_replace('/[^A-Za-z0-9]/', '', $clarity_id);
+            ?>
+            <!-- Microsoft Clarity -->
+            <script type="text/javascript">
+                (function(c,l,a,r,i,t,y){
+                    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+                })(window, document, "clarity", "script", "<?php echo esc_js($clarity_id); ?>");
+            </script>
+            <!-- /Microsoft Clarity -->
             <?php
         }
     }

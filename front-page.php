@@ -44,6 +44,11 @@ if ($cinema_music_query->have_posts()) {
     $exclude_ids = array_merge($exclude_ids, wp_list_pluck($cinema_music_query->posts, 'ID'));
 }
 
+$iv_query = quterma_get_interview_posts(3, $exclude_ids);
+if ($iv_query->have_posts()) {
+    $exclude_ids = array_merge($exclude_ids, wp_list_pluck($iv_query->posts, 'ID'));
+}
+
 $cinema_music_url = quterma_get_page_url('cinema-music', home_url('/category/cinema-music/'));
 $feed_url         = quterma_get_news_url();
 ?>
@@ -147,7 +152,7 @@ $feed_url         = quterma_get_news_url();
           $cat_info = quterma_get_post_category_info();
           $date_str = quterma_format_date(get_the_ID(), false);
       ?>
-        <article class="cc-card">
+        <article class="cc-card" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
           <div class="cc-img">
             <?php if (has_post_thumbnail()) : ?>
               <?php the_post_thumbnail('quterma-card-4x3', array(
@@ -301,7 +306,7 @@ $feed_url         = quterma_get_news_url();
               }
           }
       ?>
-        <a href="<?php the_permalink(); ?>" class="cm-card">
+        <a href="<?php the_permalink(); ?>" class="cm-card" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
           <div class="cm-media">
             <div class="cm-badge"><?php echo esc_html($badge_name); ?></div>
             <?php if (!empty($tag_label)) : ?>
@@ -337,7 +342,6 @@ $feed_url         = quterma_get_news_url();
 <!-- 6. ИНТЕРВЬЮ -->
 <?php
 $interview_url = quterma_get_page_url('interview', home_url('/category/interview/'));
-$iv_query      = quterma_get_interview_posts(3, $exclude_ids);
 if ($iv_query->have_posts()) :
 ?>
 <section class="interview-section rev">
@@ -358,7 +362,7 @@ if ($iv_query->have_posts()) :
         $person_name   = !empty($custom_person) ? $custom_person : get_the_title();
         $custom_role   = get_post_meta(get_the_ID(), '_iv_role', true);
       ?>
-        <a href="<?php the_permalink(); ?>" class="iv-card">
+        <a href="<?php the_permalink(); ?>" class="iv-card" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
           <div class="iv-media">
             <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
             <?php if (has_post_thumbnail()) : ?>

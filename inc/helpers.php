@@ -19,11 +19,20 @@ if (!function_exists('quterma_get_setting')) {
      * @return mixed
      */
     function quterma_get_setting($name, $default = '') {
+        static $settings_memo = array();
+        if (array_key_exists($name, $settings_memo)) {
+            return $settings_memo[$name];
+        }
+
         $val = get_option($name, null);
         if ($val !== null && $val !== '') {
+            $settings_memo[$name] = $val;
             return $val;
         }
-        return get_theme_mod($name, $default);
+
+        $res = get_theme_mod($name, $default);
+        $settings_memo[$name] = $res;
+        return $res;
     }
 }
 
@@ -449,14 +458,50 @@ function quterma_get_news_url() {
 }
 
 /**
- * Get canonical URL for a WordPress Category
+ * Get canonical URL for a WordPress Category with memoization and autoloaded cache.
  */
 function quterma_get_category_url($slug, $fallback = '') {
-    $cat = get_category_by_slug($slug);
-    if ($cat) {
-        return get_category_link($cat);
+    static $cat_url_memo = array();
+
+    $clean_slug = sanitize_title($slug);
+    if (empty($clean_slug)) {
+        return home_url('/');
     }
-    return !empty($fallback) ? $fallback : home_url('/category/' . sanitize_title($slug) . '/');
+
+    if (isset($cat_url_memo[$clean_slug])) {
+        return $cat_url_memo[$clean_slug];
+    }
+
+    $cached = get_option('quterma_category_urls');
+    if (is_array($cached) && isset($cached[$clean_slug])) {
+        $cat_url_memo[$clean_slug] = $cached[$clean_slug];
+        return $cached[$clean_slug];
+    }
+
+    $cat = get_category_by_slug($clean_slug);
+    if ($cat && !is_wp_error($cat)) {
+        $url = get_category_link($cat);
+    } else {
+        $url = !empty($fallback) ? $fallback : home_url('/category/' . $clean_slug . '/');
+    }
+
+    if (!is_array($cached)) {
+        $cached = array();
+    }
+    $cached[$clean_slug] = $url;
+    update_option('quterma_category_urls', $cached, true);
+    $cat_url_memo[$clean_slug] = $url;
+
+    return $url;
+}
+
+if (!function_exists('quterma_flush_category_urls_cache')) {
+    function quterma_flush_category_urls_cache() {
+        delete_option('quterma_category_urls');
+    }
+    add_action('created_category', 'quterma_flush_category_urls_cache');
+    add_action('edited_category', 'quterma_flush_category_urls_cache');
+    add_action('delete_category', 'quterma_flush_category_urls_cache');
 }
 
 /**

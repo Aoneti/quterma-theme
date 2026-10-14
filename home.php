@@ -21,9 +21,6 @@ $page_subtitle = $posts_page_id ? get_post_field('post_excerpt', $posts_page_id)
     <?php get_template_part('template-parts/breadcrumbs'); ?>
     <div class="page-header">
       <h1 class="page-title"><?php echo esc_html($page_title); ?></h1>
-      <?php if (!empty($page_subtitle)) : ?>
-        <p class="page-subtitle"><?php echo esc_html($page_subtitle); ?></p>
-      <?php endif; ?>
     </div>
   </div>
 

@@ -61,11 +61,8 @@ while (have_posts()) : the_post();
       <?php endif; ?>
 
       <div class="article-meta-row" style="border-top:1px solid var(--bd);margin-top:24px;padding-top:16px;display:flex;align-items:center;gap:10px;font-size:var(--t-xs)">
-        <?php if (!empty($author_name)) : ?>
-          <span class="article-meta-author" style="font-weight:700;color:var(--ink)"><?php echo esc_html($author_name); ?></span>
-          <span class="article-meta-sep" style="color:var(--num-rest)">·</span>
-        <?php endif; ?>
         <span class="article-meta-date" style="color:var(--ink-3);font-weight:500"><?php echo quterma_time_tag(get_the_ID(), true); ?></span>
+        <?php if (false) : ?><span class="article-meta-sep" style="color:var(--num-rest)">·</span><?php endif; ?>
       </div>
     </div>
   </div>

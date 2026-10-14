@@ -22,21 +22,8 @@ $events = quterma_get_culture_events(array(
 $has_events = !empty($events);
 $total_events = $has_events ? count($events) : 0;
 
-// Cities in Yaroslavl Region
-$cities = array(
-    'yaroslavl'    => __('Ярославль', 'quterma'),
-    'rybinsk'      => __('Рыбинск', 'quterma'),
-    'rostov'       => __('Ростов Великий', 'quterma'),
-    'pereslavl'    => __('Переславль-Залесский', 'quterma'),
-    'tutaev'       => __('Тутаев', 'quterma'),
-    'uglich'       => __('Углич', 'quterma'),
-    'gavrilov-yam' => __('Гаврилов-Ям', 'quterma'),
-    'danilov'      => __('Данилов', 'quterma'),
-    'lyubim'       => __('Любим', 'quterma'),
-    'myshkin'      => __('Мышкин', 'quterma'),
-    'poshekhonye'  => __('Пошехонье', 'quterma'),
-    'breytovo'     => __('Брейтово', 'quterma'),
-);
+// Cities in Yaroslavl Region (Single source of truth)
+$cities = function_exists('quterma_get_cities') ? quterma_get_cities() : array('yaroslavl' => __('Ярославль', 'quterma'));
 
 $city_counts = array();
 if ($has_events) {
@@ -53,9 +40,6 @@ if ($has_events) {
     <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
       <div class="page-header">
         <h1 class="page-title"><?php the_title(); ?></h1>
-        <?php if (has_excerpt()) : ?>
-          <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
-        <?php endif; ?>
       </div>
       <?php if (get_the_content()) : ?>
         <div class="page-content rev" style="margin-bottom:28px">

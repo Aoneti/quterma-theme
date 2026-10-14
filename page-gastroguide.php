@@ -25,20 +25,7 @@ $venues_query = new WP_Query(array(
 ));
 
 $total_venues = $venues_query->found_posts;
-$cities = array(
-    'yaroslavl'    => __('Ярославль', 'quterma'),
-    'rybinsk'      => __('Рыбинск', 'quterma'),
-    'rostov'       => __('Ростов Великий', 'quterma'),
-    'pereslavl'    => __('Переславль-Залесский', 'quterma'),
-    'tutaev'       => __('Тутаев', 'quterma'),
-    'uglich'       => __('Углич', 'quterma'),
-    'gavrilov-yam' => __('Гаврилов-Ям', 'quterma'),
-    'danilov'      => __('Данилов', 'quterma'),
-    'lyubim'       => __('Любим', 'quterma'),
-    'myshkin'      => __('Мышкин', 'quterma'),
-    'poshekhonye'  => __('Пошехонье', 'quterma'),
-    'breytovo'     => __('Брейтово', 'quterma'),
-);
+$cities = function_exists('quterma_get_cities') ? quterma_get_cities() : array('yaroslavl' => __('Ярославль', 'quterma'));
 
 $city_counts = array();
 if ($venues_query->have_posts()) {
@@ -56,9 +43,6 @@ if ($venues_query->have_posts()) {
     <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
       <div class="page-header">
         <h1 class="page-title"><?php the_title(); ?></h1>
-        <?php if (has_excerpt()) : ?>
-          <p class="page-subtitle"><?php echo esc_html(get_the_excerpt()); ?></p>
-        <?php endif; ?>
       </div>
       <?php if (get_the_content()) : ?>
         <div class="page-content rev" style="margin-bottom:28px">

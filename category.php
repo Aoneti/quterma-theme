@@ -22,9 +22,6 @@ $is_tile_layout  = in_array($cat_slug, $tile_categories);
     <?php get_template_part('template-parts/breadcrumbs'); ?>
     <div class="page-header">
       <h1 class="page-title"><?php single_cat_title(); ?></h1>
-      <?php if (!empty($current_cat->description)) : ?>
-        <p class="page-subtitle"><?php echo esc_html($current_cat->description); ?></p>
-      <?php endif; ?>
     </div>
   </div>
 

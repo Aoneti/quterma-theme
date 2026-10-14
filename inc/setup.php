@@ -148,18 +148,38 @@ add_action('admin_notices', function () {
  */
 function quterma_ensure_default_categories() {
     $default_cats = array(
-        'city'      => array('name' => 'Город', 'desc' => 'Городская среда, архитектура, урбанистика и благоустройство Ярославля'),
-        'culture'   => array('name' => 'Культура', 'desc' => 'Культурная жизнь, театры, выставки и фестивали'),
-        'art'       => array('name' => 'Искусство', 'desc' => 'Современное и классическое искусство, художники и галереи'),
-        'people'    => array('name' => 'Люди', 'desc' => 'Портреты горожан, мастеров, краеведов и создателей'),
-        'history'   => array('name' => 'История', 'desc' => 'Краеведение, зона ЮНЕСКО, купеческий Ярославль, архивные хроники'),
-        'interview' => array('name' => 'Интервью', 'desc' => 'Диалоги с архитекторами, историками и деятелями культуры'),
+        'city'          => array('name' => 'Город', 'desc' => ''),
+        'culture'       => array('name' => 'Культура', 'desc' => ''),
+        'art'           => array('name' => 'Искусство', 'desc' => ''),
+        'people'        => array('name' => 'Люди', 'desc' => ''),
+        'history'       => array('name' => 'История', 'desc' => ''),
+        'interview'     => array('name' => 'Интервью', 'desc' => ''),
+        'cinema-music'  => array('name' => 'Кино и музыка', 'desc' => ''),
+        'culture-layer' => array('name' => 'Культурный слой', 'desc' => ''),
+        'specials'      => array('name' => 'Спецпроекты', 'desc' => ''),
     );
     foreach ($default_cats as $slug => $data) {
         if (!get_category_by_slug($slug)) {
             wp_insert_term($data['name'], 'category', array(
                 'slug'        => $slug,
                 'description' => $data['desc'],
+            ));
+        }
+    }
+}
+
+/**
+ * Ensure default gastroguide cities exist in quterma_city taxonomy.
+ */
+function quterma_ensure_default_cities() {
+    if (!taxonomy_exists('quterma_city')) {
+        return;
+    }
+    $cities = function_exists('quterma_get_cities') ? quterma_get_cities() : array();
+    foreach ($cities as $slug => $name) {
+        if (!term_exists($slug, 'quterma_city')) {
+            wp_insert_term($name, 'quterma_city', array(
+                'slug' => $slug,
             ));
         }
     }
@@ -174,45 +194,45 @@ function quterma_auto_create_core_pages() {
     $pages = array(
         'gastroguide' => array(
             'title'    => 'Гастрогид',
-            'excerpt'  => 'Рестораны, бистро, кофейни, волжская гастрономия и барная карта',
+            'excerpt'  => '',
             'content'  => '',
             'template' => 'page-gastroguide.php',
         ),
         'events' => array(
             'title'    => 'События',
-            'excerpt'  => 'Афиша событий города, спектакли, выставки, фестивали и концерты',
+            'excerpt'  => '',
             'content'  => '',
             'template' => 'page-events.php',
         ),
         'interview' => array(
             'title'    => 'Интервью',
-            'excerpt'  => 'Диалоги с интересными людьми, архитекторами, историками и деятелями культуры',
+            'excerpt'  => '',
             'content'  => '',
             'template' => 'page-interview.php',
         ),
         'rubrics' => array(
             'title'    => 'Все рубрики',
-            'excerpt'  => 'Тематические рубрики и направления городского издания «Кутерьма»',
+            'excerpt'  => '',
             'content'  => '',
             'template' => 'page-rubrics.php',
         ),
         'about' => array(
             'title'    => 'О редакции',
-            'excerpt'  => 'Независимое городское медиа о культуре, истории и людях Ярославля',
-            'content'  => '<p class="lead">«Кутерьма» — независимое городское интернет-издание о культуре, истории, архитектуре и людях Ярославля и волжских городов.</p><p>Мы пишем о городской среде, реставрации памятников, краеведении, современном искусстве и гастрономии. Наша цель — документировать жизнь города и рассказывать о тех, кто создает его облик.</p><h2>Связь с редакцией</h2><p>По вопросам публикации материалов, анонсов и сотрудничества: <strong>redaktsiya@quterma.ru</strong></p>',
+            'excerpt'  => '',
+            'content'  => '<p class="lead">«Кутерьма» — независимое городское интернет-издание о культуре, истории, архитектуре и людях Ярославля и волжских городов.</p><p>Мы пишем о городской среде, реставрации памятников, краеведении, современном искусстве и гастрономии. Наша цель — документировать жизнь города и рассказывать о тех, кто создает его облик.</p><h2>Связь с редакцией</h2><p>По вопросам публикации материалов, анонсов и сотрудничества: <strong>quterma@yandex.ru</strong></p>',
             'template' => 'page-about.php',
         ),
         'advertising' => array(
             'title'    => 'Реклама и партнёрство',
-            'excerpt'  => 'Форматы нативной рекламы, спецпроекты и интеграции для локальных брендов',
-            'content'  => '<p class="lead">Мы предлагаем нативные спецпроекты, репортажи, фотоистории и интеграции в рубриках «Гастрогид» и «Культурный слой».</p><p>Для получения медиакита и обсуждения условий партнерства пишите: <strong>reklama@quterma.ru</strong></p>',
+            'excerpt'  => '',
+            'content'  => '<p class="lead">Мы предлагаем нативные спецпроекты, репортажи, фотоистории и интеграции в рубриках «Гастрогид» и «Культурный слой».</p><p>Для получения медиакита и обсуждения условий партнерства пишите: <strong>quterma@yandex.ru</strong></p>',
             'template' => 'page-advertising.php',
         ),
         'news' => array(
             'title'    => 'Все новости',
-            'excerpt'  => 'Хроника событий, новости городской жизни, культуры и общества Ярославля',
+            'excerpt'  => '',
             'content'  => '',
-            'template' => 'home.php',
+            'template' => 'page-news.php',
         ),
         'editorial-policy' => array(
             'title'    => 'Редакционная политика',
@@ -253,17 +273,6 @@ function quterma_auto_create_core_pages() {
         }
     }
 
-    // Set page_for_posts only if not set yet (0)
-    if ((int) get_option('page_for_posts') === 0) {
-        $news_page = get_page_by_path('news');
-        if (!$news_page) {
-            $news_page = get_page_by_path('vse-novosti');
-        }
-        if ($news_page) {
-            update_option('page_for_posts', $news_page->ID);
-        }
-    }
-
     // Batch close comments on existing posts once during initial provisioning
     global $wpdb;
     if ($wpdb && isset($wpdb->posts)) {
@@ -284,6 +293,33 @@ function quterma_provision_initial_content() {
 
     quterma_ensure_default_categories();
     quterma_auto_create_core_pages();
+    quterma_ensure_default_cities();
+
+    // Seed default setting options so they are autoloaded in batch and never query DB individually
+    $default_settings = array(
+        'quterma_telegram'             => '',
+        'quterma_vk'                   => '',
+        'quterma_email'                => '',
+        'quterma_dzen'                 => '',
+        'quterma_ad_email'             => '',
+        'quterma_footer_about'         => '',
+        'quterma_marquee_text'         => '',
+        'quterma_ym_id'                => '',
+        'quterma_ym_webvisor'          => '1',
+        'quterma_ga4_id'               => '',
+        'quterma_yandex_verification'  => '',
+        'quterma_google_verification'  => '',
+        'quterma_liveinternet_enabled' => '0',
+        'quterma_culture_api_url'      => 'https://opendata.mkrf.ru/v2/events/',
+        'quterma_home_carousel_cat'    => 'carousel',
+        'quterma_home_culture_cat'     => 'culture',
+        'quterma_home_specials_cat'    => 'specials',
+        'quterma_home_cinema_music_cat'=> 'cinema-music',
+        'quterma_home_interview_cat'   => 'interview',
+    );
+    foreach ($default_settings as $opt_key => $opt_val) {
+        add_option($opt_key, $opt_val, '', 'yes');
+    }
 
     update_option('quterma_provisioned_version', $schema_version);
 }
@@ -348,34 +384,32 @@ function quterma_resolve_virtual_routes() {
     }
 
     $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-    $req_path = trim(parse_url($uri, PHP_URL_PATH), '/');
-    $site_path = trim(parse_url(home_url(), PHP_URL_PATH), '/');
+    $req_path = trim((string) wp_parse_url($uri, PHP_URL_PATH), '/');
+    $site_path = trim((string) wp_parse_url(home_url(), PHP_URL_PATH), '/');
     if (!empty($site_path) && strpos($req_path, $site_path) === 0) {
         $req_path = trim(substr($req_path, strlen($site_path)), '/');
     }
 
-    $segments = explode('/', $req_path);
-    $first = isset($segments[0]) ? $segments[0] : '';
+    $segments = array_values(array_filter(explode('/', $req_path), 'strlen'));
+    // Core virtual routes are only valid as single-segment endpoints.
+    // Deep subpaths (e.g. /events/xyz, /about/x/y, /gastroguide/nonexistent, /news/xyz) must return clean 404.
+    if (count($segments) !== 1) {
+        return;
+    }
+
+    $first = $segments[0];
 
     // News endpoint: /news or /news/ or /vse-novosti/
     if ($first === 'news' || $first === 'vse-novosti' || $first === 'all-news') {
-        $page_for_posts = (int) get_option('page_for_posts');
-        if ($page_for_posts > 0) {
-            $news_url = get_permalink($page_for_posts);
-            if ($news_url && untrailingslashit($news_url) !== untrailingslashit(home_url($first))) {
-                wp_safe_redirect($news_url, 301);
-                exit;
-            }
-        }
         $page = get_page_by_path($first);
         if ($page) {
-            quterma_render_core_page_view($first, $page->post_title, $page->post_content, 'home.php');
+            quterma_render_core_page_view($first, $page->post_title, $page->post_content, 'page-news.php');
         }
         status_header(200);
         global $wp_query;
         $wp_query->is_404  = false;
-        $wp_query->is_home = true;
-        include get_template_directory() . '/home.php';
+        $wp_query->is_page = true;
+        include get_template_directory() . '/page-news.php';
         exit;
     }
 
@@ -386,7 +420,7 @@ function quterma_resolve_virtual_routes() {
             __('События', 'quterma'),
             '',
             'page-events.php',
-            __('Афиша событий города, спектакли, выставки, фестивали и концерты', 'quterma')
+            ''
         );
     }
 
@@ -397,14 +431,14 @@ function quterma_resolve_virtual_routes() {
             __('Гастрогид', 'quterma'),
             '',
             'page-gastroguide.php',
-            __('Рестораны, бистро, кофейни, волжская гастрономия и барная карта', 'quterma')
+            ''
         );
     }
 
     // Interview endpoint: /interview
     if ($first === 'interview') {
         $cat = get_category_by_slug('interview');
-        if ($cat && count($segments) === 1) {
+        if ($cat) {
             wp_safe_redirect(get_category_link($cat), 301);
             exit;
         }
@@ -413,7 +447,7 @@ function quterma_resolve_virtual_routes() {
             __('Интервью', 'quterma'),
             '',
             'page-interview.php',
-            __('Диалоги с интересными людьми, архитекторами, историками и деятелями культуры', 'quterma')
+            ''
         );
     }
 
@@ -424,7 +458,7 @@ function quterma_resolve_virtual_routes() {
             __('Рубрики', 'quterma'),
             '',
             'page-rubrics.php',
-            __('Тематические рубрики и направления городского издания «Кутерьма»', 'quterma')
+            ''
         );
     }
 
@@ -435,7 +469,7 @@ function quterma_resolve_virtual_routes() {
             __('О редакции', 'quterma'),
             '',
             'page-about.php',
-            __('Независимое городское медиа о культуре, истории и людях Ярославля', 'quterma')
+            ''
         );
     }
 
@@ -446,7 +480,7 @@ function quterma_resolve_virtual_routes() {
             __('Реклама и партнёрство', 'quterma'),
             '',
             'page-advertising.php',
-            __('Форматы нативной рекламы, спецпроекты и интеграции для локальных брендов', 'quterma')
+            ''
         );
     }
 

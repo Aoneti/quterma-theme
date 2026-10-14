@@ -9,6 +9,30 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!function_exists('quterma_get_cities')) {
+    /**
+     * Canonical registry of Yaroslavl region cities for gastroguide and events
+     *
+     * @return array
+     */
+    function quterma_get_cities() {
+        return array(
+            'yaroslavl'    => __('Ярославль', 'quterma'),
+            'rybinsk'      => __('Рыбинск', 'quterma'),
+            'rostov'       => __('Ростов Великий', 'quterma'),
+            'pereslavl'    => __('Переславль-Залесский', 'quterma'),
+            'tutaev'       => __('Тутаев', 'quterma'),
+            'uglich'       => __('Углич', 'quterma'),
+            'gavrilov-yam' => __('Гаврилов-Ям', 'quterma'),
+            'danilov'      => __('Данилов', 'quterma'),
+            'lyubim'       => __('Любим', 'quterma'),
+            'myshkin'      => __('Мышкин', 'quterma'),
+            'poshekhonye'  => __('Пошехонье', 'quterma'),
+            'breytovo'     => __('Брейтово', 'quterma'),
+        );
+    }
+}
+
 if (!function_exists('quterma_get_city_name')) {
     /**
      * Helper to get Russian city name from slug.
@@ -17,21 +41,32 @@ if (!function_exists('quterma_get_city_name')) {
      * @return string
      */
     function quterma_get_city_name($slug) {
-        $cities = array(
-            'yaroslavl'    => 'Ярославль',
-            'rybinsk'      => 'Рыбинск',
-            'rostov'       => 'Ростов Великий',
-            'pereslavl'    => 'Переславль-Залесский',
-            'tutaev'       => 'Тутаев',
-            'uglich'       => 'Углич',
-            'gavrilov-yam' => 'Гаврилов-Ям',
-            'danilov'      => 'Данилов',
-            'lyubim'       => 'Любим',
-            'myshkin'      => 'Мышкин',
-            'poshekhonye'  => 'Пошехонье',
-            'breytovo'     => 'Брейтово',
+        $cities = quterma_get_cities();
+        return isset($cities[$slug]) ? $cities[$slug] : __('Ярославль', 'quterma');
+    }
+}
+
+if (!function_exists('quterma_get_venue_price_tiers')) {
+    /**
+     * Canonical registry of venue price tiers
+     *
+     * @return array
+     */
+    function quterma_get_venue_price_tiers() {
+        return array(
+            '₽' => array(
+                'admin'  => __('демократично, до 700 ₽', 'quterma'),
+                'public' => __('До 700 ₽', 'quterma'),
+            ),
+            '₽₽' => array(
+                'admin'  => __('средний чек, 700–1500 ₽', 'quterma'),
+                'public' => __('700–1500 ₽', 'quterma'),
+            ),
+            '₽₽₽' => array(
+                'admin'  => __('высокий чек, от 1500 ₽', 'quterma'),
+                'public' => __('От 1500 ₽', 'quterma'),
+            ),
         );
-        return isset($cities[$slug]) ? $cities[$slug] : ucfirst($slug);
     }
 }
 
@@ -176,20 +211,7 @@ if (!function_exists('quterma_venue_render_meta_box')) {
         $phone       = get_post_meta($post->ID, '_venue_phone', true);
         $hours       = get_post_meta($post->ID, '_venue_hours', true);
 
-        $cities = array(
-            'yaroslavl'    => 'Ярославль',
-            'rybinsk'      => 'Рыбинск',
-            'rostov'       => 'Ростов Великий',
-            'pereslavl'    => 'Переславль-Залесский',
-            'tutaev'       => 'Тутаев',
-            'uglich'       => 'Углич',
-            'gavrilov-yam' => 'Гаврилов-Ям',
-            'danilov'      => 'Данилов',
-            'lyubim'       => 'Любим',
-            'myshkin'      => 'Мышкин',
-            'poshekhonye'  => 'Пошехонье',
-            'breytovo'     => 'Брейтово',
-        );
+        $cities = quterma_get_cities();
 
         $features_lower = function_exists('quterma_strtolower') ? quterma_strtolower($features) : (function_exists('mb_strtolower') ? mb_strtolower($features, 'UTF-8') : strtolower($features));
         $pos_fn         = function_exists('quterma_strpos') ? 'quterma_strpos' : (function_exists('mb_strpos') ? 'mb_strpos' : 'strpos');
@@ -197,6 +219,30 @@ if (!function_exists('quterma_venue_render_meta_box')) {
         $has_pets       = ($pos_fn($features_lower, 'животн') !== false || $pos_fn($features_lower, 'pet') !== false);
         $has_vegan      = ($pos_fn($features_lower, 'веган') !== false || $pos_fn($features_lower, 'vegan') !== false);
         $has_late       = ($pos_fn($features_lower, 'допоздна') !== false || $pos_fn($features_lower, '24') !== false);
+
+        // Prepopulate only non-standard / custom feature tokens
+        $custom_tokens = array();
+        if (!empty($features)) {
+            $parts = array_map('trim', explode(',', $features));
+            foreach ($parts as $p) {
+                if (empty($p)) {
+                    continue;
+                }
+                $p_lower = function_exists('quterma_strtolower') ? quterma_strtolower($p) : (function_exists('mb_strtolower') ? mb_strtolower($p, 'UTF-8') : strtolower($p));
+                $pos_fn  = function_exists('quterma_strpos') ? 'quterma_strpos' : (function_exists('mb_strpos') ? 'mb_strpos' : 'strpos');
+                if (
+                    $pos_fn($p_lower, 'веранда') !== false ||
+                    $pos_fn($p_lower, 'животн') !== false || $pos_fn($p_lower, 'pet') !== false ||
+                    $pos_fn($p_lower, 'веган') !== false || $pos_fn($p_lower, 'vegan') !== false ||
+                    $pos_fn($p_lower, 'допоздна') !== false || $pos_fn($p_lower, '24') !== false
+                ) {
+                    continue;
+                }
+                $custom_tokens[] = $p;
+            }
+        }
+        $custom_features_str = implode(', ', $custom_tokens);
+        $price_tiers = quterma_get_venue_price_tiers();
         ?>
         <style>
           .qv-row { margin-bottom: 16px; }
@@ -237,18 +283,12 @@ if (!function_exists('quterma_venue_render_meta_box')) {
         <div class="qv-row">
             <label class="qv-label"><?php esc_html_e('Ценовой диапазон (средний чек)', 'quterma'); ?></label>
             <div style="display:flex;gap:18px;margin-top:4px">
+                <?php foreach ($price_tiers as $tier_key => $tier) : ?>
                 <label style="cursor:pointer">
-                    <input type="radio" name="venue_price" value="₽" <?php checked($price, '₽'); ?>>
-                    <strong>₽</strong> (демократично, до 700 ₽)
+                    <input type="radio" name="venue_price" value="<?php echo esc_attr($tier_key); ?>" <?php checked($price, $tier_key); ?>>
+                    <strong><?php echo esc_html($tier_key); ?></strong> (<?php echo esc_html($tier['admin']); ?>)
                 </label>
-                <label style="cursor:pointer">
-                    <input type="radio" name="venue_price" value="₽₽" <?php checked($price, '₽₽'); ?>>
-                    <strong>₽₽</strong> (средний чек, 700–1500 ₽)
-                </label>
-                <label style="cursor:pointer">
-                    <input type="radio" name="venue_price" value="₽₽₽" <?php checked($price, '₽₽₽'); ?>>
-                    <strong>₽₽₽</strong> (высокий чек, от 1500 ₽)
-                </label>
+                <?php endforeach; ?>
             </div>
         </div>
 
@@ -272,7 +312,7 @@ if (!function_exists('quterma_venue_render_meta_box')) {
                     <?php esc_html_e('Работает допоздна', 'quterma'); ?>
                 </label>
             </div>
-            <input type="text" name="venue_features_custom" id="venue_features_custom" value="<?php echo esc_attr($features); ?>" placeholder="<?php esc_attr_e('Дополнительные особенности через запятую (например: завтраки весь день, спешелти кофе)', 'quterma'); ?>" style="width:100%;max-width:600px;" />
+            <input type="text" name="venue_features_custom" id="venue_features_custom" value="<?php echo esc_attr($custom_features_str); ?>" placeholder="<?php esc_attr_e('Дополнительные особенности через запятую (например: завтраки весь день, спешелти кофе)', 'quterma'); ?>" style="width:100%;max-width:600px;" />
         </div>
 
         <div class="qv-row">
@@ -314,15 +354,13 @@ if (!function_exists('quterma_venue_save_meta')) {
             return;
         }
 
-        // 1. City (support both venue_city and _venue_city)
-        $city = '';
+        // 1. City (strictly validated against canonical city registry)
+        $allowed_cities = quterma_get_cities();
         if (isset($_POST['venue_city'])) {
             $city = sanitize_text_field(wp_unslash($_POST['venue_city']));
-        } elseif (isset($_POST['_venue_city'])) {
-            $city = sanitize_text_field(wp_unslash($_POST['_venue_city']));
-        }
-
-        if (!empty($city)) {
+            if (!array_key_exists($city, $allowed_cities)) {
+                $city = 'yaroslavl';
+            }
             update_post_meta($post_id, '_venue_city', $city);
 
             // Sync with taxonomy quterma_city
@@ -335,6 +373,12 @@ if (!function_exists('quterma_venue_save_meta')) {
                 $term_id = is_array($term) ? $term['term_id'] : $term;
                 wp_set_post_terms($post_id, array((int) $term_id), 'quterma_city');
             }
+        } elseif (isset($_POST['_venue_city'])) {
+            $city = sanitize_text_field(wp_unslash($_POST['_venue_city']));
+            if (!array_key_exists($city, $allowed_cities)) {
+                $city = 'yaroslavl';
+            }
+            update_post_meta($post_id, '_venue_city', $city);
         }
 
         // 2. Type
@@ -351,14 +395,23 @@ if (!function_exists('quterma_venue_save_meta')) {
             update_post_meta($post_id, '_venue_address', sanitize_text_field(wp_unslash($_POST['_venue_address'])));
         }
 
-        // 4. Price
+        // 4. Price (strictly validated against canonical price tiers)
+        $price_tiers = quterma_get_venue_price_tiers();
         if (isset($_POST['venue_price'])) {
-            update_post_meta($post_id, '_venue_price', sanitize_text_field(wp_unslash($_POST['venue_price'])));
+            $price_val = sanitize_text_field(wp_unslash($_POST['venue_price']));
+            if (!array_key_exists($price_val, $price_tiers)) {
+                $price_val = '₽₽';
+            }
+            update_post_meta($post_id, '_venue_price', $price_val);
         } elseif (isset($_POST['_venue_price'])) {
-            update_post_meta($post_id, '_venue_price', sanitize_text_field(wp_unslash($_POST['_venue_price'])));
+            $price_val = sanitize_text_field(wp_unslash($_POST['_venue_price']));
+            if (!array_key_exists($price_val, $price_tiers)) {
+                $price_val = '₽₽';
+            }
+            update_post_meta($post_id, '_venue_price', $price_val);
         }
 
-        // 5. Features
+        // 5. Features (combine checkboxes and custom input; never re-add standard features through custom field)
         $feat_tokens = array();
         if (!empty($_POST['qv_feat_veranda'])) {
             $feat_tokens[] = 'Веранда';
@@ -372,20 +425,32 @@ if (!function_exists('quterma_venue_save_meta')) {
         if (!empty($_POST['qv_feat_late'])) {
             $feat_tokens[] = 'Работает допоздна';
         }
-        if (!empty($_POST['venue_features_custom'])) {
+        if (isset($_POST['venue_features_custom'])) {
             $custom_parts = explode(',', sanitize_text_field(wp_unslash($_POST['venue_features_custom'])));
             foreach ($custom_parts as $cp) {
                 $cp = trim($cp);
-                if (!empty($cp) && !in_array($cp, $feat_tokens, true)) {
+                if (empty($cp)) {
+                    continue;
+                }
+                $cp_lower = function_exists('quterma_strtolower') ? quterma_strtolower($cp) : (function_exists('mb_strtolower') ? mb_strtolower($cp, 'UTF-8') : strtolower($cp));
+                $pos_fn   = function_exists('quterma_strpos') ? 'quterma_strpos' : (function_exists('mb_strpos') ? 'mb_strpos' : 'strpos');
+                // Guard against standard features typed into custom field when checkbox is unchecked
+                if (
+                    $pos_fn($cp_lower, 'веранда') !== false ||
+                    $pos_fn($cp_lower, 'животн') !== false || $pos_fn($cp_lower, 'pet') !== false ||
+                    $pos_fn($cp_lower, 'веган') !== false || $pos_fn($cp_lower, 'vegan') !== false ||
+                    $pos_fn($cp_lower, 'допоздна') !== false || $pos_fn($cp_lower, '24') !== false
+                ) {
+                    continue;
+                }
+                if (!in_array($cp, $feat_tokens, true)) {
                     $feat_tokens[] = $cp;
                 }
             }
         } elseif (!empty($_POST['_venue_features'])) {
             $feat_tokens[] = sanitize_text_field(wp_unslash($_POST['_venue_features']));
         }
-        if (!empty($feat_tokens)) {
-            update_post_meta($post_id, '_venue_features', implode(', ', $feat_tokens));
-        }
+        update_post_meta($post_id, '_venue_features', implode(', ', $feat_tokens));
 
         // 6. Website
         if (isset($_POST['venue_website'])) {

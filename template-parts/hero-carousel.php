@@ -24,6 +24,7 @@ if (!$carousel_query->have_posts()) {
     <div class="hero-carousel" id="heroCarousel">
       <div class="hc-track" id="hcTrack">
         <?php
+        update_post_thumbnail_cache($carousel_query);
         $slide_index = 0;
         while ($carousel_query->have_posts()) : $carousel_query->the_post();
             $slide_index++;
