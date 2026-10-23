@@ -94,8 +94,9 @@ if (!function_exists('quterma_output_seo_meta')) {
             $image   = wp_get_attachment_image_url($logo_id, 'full');
         }
 
-        // Standard meta
+        // Standard meta & Google Discover optimization
         echo '<meta name="description" content="' . esc_attr($desc) . '">' . "\n";
+        echo '<meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1">' . "\n";
 
         // Open Graph
         echo '<meta property="og:site_name" content="' . esc_attr($site_name) . '">' . "\n";
@@ -205,9 +206,27 @@ if (!function_exists('quterma_output_schema_json_ld')) {
             $words_arr = preg_split('/\s+/u', $clean_body, -1, PREG_SPLIT_NO_EMPTY);
             $word_count = is_array($words_arr) ? count($words_arr) : 0;
 
+            // Check for LiveBlogPosting (tags or meta)
+            $is_liveblog = false;
+            if (get_post_meta($post->ID, '_is_liveblog', true) || get_post_meta($post->ID, '_quterma_liveblog', true)) {
+                $is_liveblog = true;
+            }
+            $post_tags = get_the_tags($post->ID);
+            if (!$is_liveblog && !empty($post_tags) && is_array($post_tags)) {
+                foreach ($post_tags as $pt) {
+                    $pt_lower = function_exists('mb_strtolower') ? mb_strtolower(trim($pt->name), 'UTF-8') : strtolower(trim($pt->name));
+                    if (in_array($pt_lower, array('live', 'онлайн', 'онлайн-трансляция', 'прямой эфир', 'прямой-эфир', 'хроника'))) {
+                        $is_liveblog = true;
+                        break;
+                    }
+                }
+            }
+
+            $schema_type = $is_liveblog ? 'LiveBlogPosting' : 'NewsArticle';
+
             $article_schema = array(
                 '@context'            => 'https://schema.org',
-                '@type'               => 'NewsArticle',
+                '@type'               => $schema_type,
                 'mainEntityOfPage'    => array(
                     '@type' => 'WebPage',
                     '@id'   => $permalink,
@@ -227,6 +246,20 @@ if (!function_exists('quterma_output_schema_json_ld')) {
                 ),
                 'publisher'           => $publisher,
             );
+
+            if ($is_liveblog) {
+                $article_schema['coverageStartTime'] = get_the_date('c', $post);
+                $article_schema['coverageEndTime']   = get_the_modified_date('c', $post);
+                $article_schema['liveBlogUpdate']    = array(
+                    array(
+                        '@type'         => 'BlogPosting',
+                        'headline'      => $headline,
+                        'datePublished' => get_the_modified_date('c', $post),
+                        'dateModified'  => get_the_modified_date('c', $post),
+                        'articleBody'   => $description,
+                    ),
+                );
+            }
 
             if ($word_count > 0) {
                 $article_schema['wordCount'] = $word_count;
@@ -434,3 +467,110 @@ if (!function_exists('quterma_output_schema_json_ld')) {
     }
     add_action('wp_head', 'quterma_output_schema_json_ld', 5);
 }
+
+/**
+ * Google News XML Sitemap generator & rewrite rules.
+ */
+if (!function_exists('quterma_register_news_sitemap')) {
+    function quterma_register_news_sitemap() {
+        add_feed('news-sitemap', 'quterma_render_news_sitemap');
+        add_rewrite_rule('^news-sitemap\.xml$', 'index.php?feed=news-sitemap', 'top');
+        add_rewrite_rule('^sitemap-news\.xml$', 'index.php?feed=news-sitemap', 'top');
+    }
+    add_action('init', 'quterma_register_news_sitemap', 10);
+}
+
+if (!function_exists('quterma_render_news_sitemap')) {
+    function quterma_render_news_sitemap() {
+        header('Content-Type: application/xml; charset=UTF-8');
+        header('X-Robots-Tag: noindex, follow', true);
+
+        $site_name = quterma_clean_seo_text(get_bloginfo('name'));
+        $lang      = 'ru';
+
+        // Query posts published in the last 48 hours (Google News standard requirement),
+        // with fallback to the last 50 published posts if the site is in testing or low frequency.
+        $two_days_ago = date('Y-m-d H:i:s', strtotime('-48 hours'));
+        $news_posts = get_posts(array(
+            'post_type'      => 'post',
+            'post_status'    => 'publish',
+            'posts_per_page' => 100,
+            'date_query'     => array(
+                array(
+                    'after'     => $two_days_ago,
+                    'inclusive' => true,
+                ),
+            ),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'no_found_rows'  => true,
+        ));
+
+        if (empty($news_posts)) {
+            $news_posts = get_posts(array(
+                'post_type'      => 'post',
+                'post_status'    => 'publish',
+                'posts_per_page' => 50,
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+                'no_found_rows'  => true,
+            ));
+        }
+
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
+
+        foreach ($news_posts as $post) {
+            $loc      = get_permalink($post);
+            $title    = quterma_clean_seo_text(get_the_title($post));
+            $pub_date = get_the_date('c', $post);
+
+            echo '  <url>' . "\n";
+            echo '    <loc>' . esc_url($loc) . '</loc>' . "\n";
+            echo '    <news:news>' . "\n";
+            echo '      <news:publication>' . "\n";
+            echo '        <news:name>' . esc_html($site_name) . '</news:name>' . "\n";
+            echo '        <news:language>' . esc_html($lang) . '</news:language>' . "\n";
+            echo '      </news:publication>' . "\n";
+            echo '      <news:publication_date>' . esc_html($pub_date) . '</news:publication_date>' . "\n";
+            echo '      <news:title>' . esc_html($title) . '</news:title>' . "\n";
+            echo '    </news:news>' . "\n";
+
+            if (has_post_thumbnail($post)) {
+                $img_url = get_the_post_thumbnail_url($post, 'full');
+                if ($img_url) {
+                    echo '    <image:image>' . "\n";
+                    echo '      <image:loc>' . esc_url($img_url) . '</image:loc>' . "\n";
+                    echo '      <image:title>' . esc_html($title) . '</image:title>' . "\n";
+                    echo '    </image:image>' . "\n";
+                }
+            }
+            echo '  </url>' . "\n";
+        }
+
+        echo '</urlset>' . "\n";
+        exit;
+    }
+}
+
+/**
+ * Dynamic robots.txt support for Google News & standard sitemaps.
+ */
+if (!function_exists('quterma_filter_robots_txt')) {
+    function quterma_filter_robots_txt($output, $public) {
+        $sitemap_url      = home_url('/sitemap.xml');
+        $news_sitemap_url = home_url('/news-sitemap.xml');
+
+        $lines = array();
+        $lines[] = 'User-agent: *';
+        $lines[] = 'Disallow: /wp-admin/';
+        $lines[] = 'Allow: /wp-admin/admin-ajax.php';
+        $lines[] = '';
+        $lines[] = 'Sitemap: ' . $sitemap_url;
+        $lines[] = 'Sitemap: ' . $news_sitemap_url;
+
+        return implode("\n", $lines) . "\n";
+    }
+    add_filter('robots_txt', 'quterma_filter_robots_txt', 20, 2);
+}
+

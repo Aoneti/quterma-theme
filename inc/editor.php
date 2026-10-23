@@ -250,10 +250,10 @@ function quterma_save_editorial_meta($post_id) {
     if (isset($_POST['quterma_interview_meta_nonce']) && wp_verify_nonce($_POST['quterma_interview_meta_nonce'], 'quterma_interview_meta_nonce_action')) {
         if (current_user_can('edit_post', $post_id) || current_user_can('edit_page', $post_id)) {
             if (isset($_POST['_iv_person'])) {
-                update_post_meta($post_id, '_iv_person', sanitize_text_field($_POST['_iv_person']));
+                update_post_meta($post_id, '_iv_person', sanitize_text_field(wp_unslash($_POST['_iv_person'])));
             }
             if (isset($_POST['_iv_role'])) {
-                update_post_meta($post_id, '_iv_role', sanitize_text_field($_POST['_iv_role']));
+                update_post_meta($post_id, '_iv_role', sanitize_text_field(wp_unslash($_POST['_iv_role'])));
             }
         }
     }
@@ -262,7 +262,7 @@ function quterma_save_editorial_meta($post_id) {
     if (isset($_POST['quterma_page_meta_nonce']) && wp_verify_nonce($_POST['quterma_page_meta_nonce'], 'quterma_page_meta_nonce_action')) {
         if (current_user_can('edit_post', $post_id) || current_user_can('edit_page', $post_id)) {
             if (isset($_POST['_page_subtitle'])) {
-                update_post_meta($post_id, '_page_subtitle', sanitize_text_field($_POST['_page_subtitle']));
+                update_post_meta($post_id, '_page_subtitle', sanitize_text_field(wp_unslash($_POST['_page_subtitle'])));
             }
         }
     }

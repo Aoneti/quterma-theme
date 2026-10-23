@@ -15,7 +15,7 @@
   var mo = document.getElementById('mobOverlay');
   var so = document.getElementById('srchOverlay');
 
-  window.addEventListener('scroll', function () {
+  function updateHeaderScroll() {
     var currentY = window.scrollY || 0;
     if (hdr) {
       hdr.classList.toggle('scrolled', currentY > 8);
@@ -40,7 +40,11 @@
       scrollTopBtn.classList.toggle('vis', currentY > 400);
     }
     lastScrollY = currentY;
-  }, { passive: true });
+  }
+
+  window.addEventListener('scroll', updateHeaderScroll, { passive: true });
+  // Initialize state immediately on load for restored scroll positions
+  updateHeaderScroll();
 
   if (scrollTopBtn) {
     scrollTopBtn.addEventListener('click', function () {
@@ -437,6 +441,7 @@
   initFilterSliders();
 
   // 7. GASTROGUIDE FILTERING (Города, Кухня, Цена, Особенности)
+  // 7. GASTROGUIDE FILTERING (Города, Формат, Кухня, Цена, Особенности)
   (function initGastroguideFilters() {
     var venueGrid = document.getElementById('venueGrid');
     if (!venueGrid) return;
@@ -451,15 +456,88 @@
     var activeChips = document.getElementById('venueActiveChips');
     var resetLink = document.getElementById('venueResetLink');
 
-    // Read initial URL params if present
-    var urlParams = new URLSearchParams(window.location.search);
-    var curCity = urlParams.get('city') || 'all';
-    var curType = urlParams.get('type') || 'all';
-    var curPrice = urlParams.get('price') || 'all';
-    var curFeatures = [];
-    if (urlParams.get('features')) {
-      curFeatures = urlParams.get('features').split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+    // Dynamically discover and populate custom feature tags from card data-features (Item 11)
+    var featuresContainer = document.getElementById('featuresFilters') || (extra ? extra.querySelector('.filter-extra-group:last-child .filter-extra-opts') : null);
+    if (featuresContainer && cards.length) {
+      var existingFeatKeys = [];
+      featuresContainer.querySelectorAll('.tag[data-filter-feature]').forEach(function (btn) {
+        existingFeatKeys.push((btn.getAttribute('data-filter-feature') || '').toLowerCase());
+      });
+
+      cards.forEach(function (card) {
+        var rawFeats = (card.getAttribute('data-features') || '');
+        var tokens = rawFeats.split(/[,\s]+/);
+        tokens.forEach(function (f) {
+          f = f.trim();
+          if (!f || f.length < 3) return;
+          var fLower = f.toLowerCase();
+          var exists = existingFeatKeys.some(function (k) {
+            return k === fLower || (k.length > 3 && fLower.indexOf(k) !== -1) || (fLower.length > 3 && k.indexOf(fLower) !== -1);
+          });
+          if (!exists) {
+            existingFeatKeys.push(fLower);
+            var newTag = document.createElement('button');
+            newTag.type = 'button';
+            newTag.className = 'tag dynamic-feat-tag';
+            newTag.setAttribute('aria-pressed', 'false');
+            newTag.setAttribute('data-filter-feature', fLower);
+            newTag.textContent = f.charAt(0).toUpperCase() + f.slice(1);
+            featuresContainer.appendChild(newTag);
+          }
+        });
+      });
     }
+
+    // Read initial URL params if present and whitelist them
+    var urlParams = new URLSearchParams(window.location.search);
+    var rawCity = urlParams.get('city') || 'all';
+    var rawFormat = urlParams.get('format') || urlParams.get('type') || 'all';
+    var rawCuisine = urlParams.get('cuisine') || 'all';
+    var rawPrice = urlParams.get('price') || 'all';
+    var rawFeatures = [];
+    if (urlParams.get('features')) {
+      rawFeatures = urlParams.get('features').split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+    }
+
+    // Whitelist valid filter values from DOM elements to prevent DOM XSS
+    var allowedCities = ['all'];
+    cityFilts.forEach(function (btn) {
+      var c = btn.getAttribute('data-city');
+      if (c && allowedCities.indexOf(c) === -1) {
+        allowedCities.push(c);
+      }
+    });
+
+    var allowedFormats = ['all'];
+    var allowedCuisines = ['all'];
+    var allowedPrices = ['all'];
+    var allowedFeatures = [];
+    if (extra) {
+      extra.querySelectorAll('.tag[data-filter-format], .tag[data-filter-type]').forEach(function (t) {
+        var v = (t.getAttribute('data-filter-format') || t.getAttribute('data-filter-type') || '').toLowerCase();
+        if (v && allowedFormats.indexOf(v) === -1) allowedFormats.push(v);
+      });
+      extra.querySelectorAll('.tag[data-filter-cuisine]').forEach(function (t) {
+        var v = (t.getAttribute('data-filter-cuisine') || '').toLowerCase();
+        if (v && allowedCuisines.indexOf(v) === -1) allowedCuisines.push(v);
+      });
+      extra.querySelectorAll('.tag[data-filter-price]').forEach(function (t) {
+        var v = t.getAttribute('data-filter-price');
+        if (v && allowedPrices.indexOf(v) === -1) allowedPrices.push(v);
+      });
+      extra.querySelectorAll('.tag[data-filter-feature]').forEach(function (t) {
+        var v = (t.getAttribute('data-filter-feature') || '').toLowerCase();
+        if (v && allowedFeatures.indexOf(v) === -1) allowedFeatures.push(v);
+      });
+    }
+
+    var curCity = (allowedCities.indexOf(rawCity) !== -1) ? rawCity : 'all';
+    var curFormat = (allowedFormats.indexOf(rawFormat.toLowerCase()) !== -1) ? rawFormat.toLowerCase() : 'all';
+    var curCuisine = (allowedCuisines.indexOf(rawCuisine.toLowerCase()) !== -1) ? rawCuisine.toLowerCase() : 'all';
+    var curPrice = (allowedPrices.indexOf(rawPrice) !== -1) ? rawPrice : 'all';
+    var curFeatures = rawFeatures.filter(function (f) {
+      return allowedFeatures.indexOf(f) !== -1;
+    });
 
     function syncUrl() {
       var params = new URLSearchParams(window.location.search);
@@ -468,10 +546,16 @@
       } else {
         params.delete('city');
       }
-      if (curType !== 'all') {
-        params.set('type', curType);
+      if (curFormat !== 'all') {
+        params.set('format', curFormat);
       } else {
+        params.delete('format');
         params.delete('type');
+      }
+      if (curCuisine !== 'all') {
+        params.set('cuisine', curCuisine);
+      } else {
+        params.delete('cuisine');
       }
       if (curPrice !== 'all') {
         params.set('price', curPrice);
@@ -492,7 +576,7 @@
 
     function updateActiveChips() {
       if (!activeChips) return;
-      activeChips.innerHTML = '';
+      activeChips.textContent = '';
       var hasFilter = false;
 
       function addChip(label, onRemove) {
@@ -500,8 +584,20 @@
         var chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'active-filter-chip';
-        chip.innerHTML = label + ' <span class="chip-x" aria-hidden="true">✕</span>';
         chip.setAttribute('aria-label', 'Удалить фильтр ' + label);
+
+        var labelNode = document.createTextNode(label);
+        chip.appendChild(labelNode);
+
+        var spaceNode = document.createTextNode(' ');
+        chip.appendChild(spaceNode);
+
+        var xSpan = document.createElement('span');
+        xSpan.className = 'chip-x';
+        xSpan.setAttribute('aria-hidden', 'true');
+        xSpan.textContent = '✕';
+        chip.appendChild(xSpan);
+
         chip.addEventListener('click', onRemove);
         activeChips.appendChild(chip);
       }
@@ -514,11 +610,28 @@
         });
       }
 
-      if (curType !== 'all') {
-        addChip(curType.charAt(0).toUpperCase() + curType.slice(1), function () {
-          curType = 'all';
+      if (curFormat !== 'all') {
+        var formatBtn = extra ? extra.querySelector('.tag[data-filter-format="' + curFormat + '"], .tag[data-filter-type="' + curFormat + '"]') : null;
+        var formatLabel = formatBtn ? formatBtn.textContent.trim() : (curFormat.charAt(0).toUpperCase() + curFormat.slice(1));
+        addChip(formatLabel, function () {
+          curFormat = 'all';
           if (extra) {
-            extra.querySelectorAll('.tag[data-filter-type]').forEach(function (x) {
+            extra.querySelectorAll('.tag[data-filter-format], .tag[data-filter-type]').forEach(function (x) {
+              x.classList.remove('active');
+              x.setAttribute('aria-pressed', 'false');
+            });
+          }
+          applyVenues(true);
+        });
+      }
+
+      if (curCuisine !== 'all') {
+        var cuisineBtn = extra ? extra.querySelector('.tag[data-filter-cuisine="' + curCuisine + '"]') : null;
+        var cuisineLabel = cuisineBtn ? cuisineBtn.textContent.trim() : (curCuisine.charAt(0).toUpperCase() + curCuisine.slice(1));
+        addChip(cuisineLabel, function () {
+          curCuisine = 'all';
+          if (extra) {
+            extra.querySelectorAll('.tag[data-filter-cuisine]').forEach(function (x) {
               x.classList.remove('active');
               x.setAttribute('aria-pressed', 'false');
             });
@@ -563,12 +676,14 @@
       cards = venueGrid.querySelectorAll('.venue-card');
       cards.forEach(function (card) {
         var cardCity = card.getAttribute('data-city');
-        var cardType = (card.getAttribute('data-type') || '').toLowerCase();
+        var cardFormat = (card.getAttribute('data-format') || card.getAttribute('data-type') || '').toLowerCase();
+        var cardCuisine = (card.getAttribute('data-cuisine') || '').toLowerCase();
         var cardPrice = card.getAttribute('data-price');
         var cardFeatures = (card.getAttribute('data-features') || '').toLowerCase();
 
         var matchCity = (curCity === 'all' || cardCity === curCity);
-        var matchType = (curType === 'all' || cardType.indexOf(curType) !== -1);
+        var matchFormat = (curFormat === 'all' || cardFormat.indexOf(curFormat) !== -1);
+        var matchCuisine = (curCuisine === 'all' || cardCuisine.indexOf(curCuisine) !== -1);
         var matchPrice = (curPrice === 'all' || cardPrice === curPrice);
 
         var matchFeatures = true;
@@ -581,7 +696,7 @@
           }
         }
 
-        var show = matchCity && matchType && matchPrice && matchFeatures;
+        var show = matchCity && matchFormat && matchCuisine && matchPrice && matchFeatures;
         card.style.display = show ? '' : 'none';
         if (show) count++;
       });
@@ -616,7 +731,8 @@
 
     function resetAllVenues() {
       curCity = 'all';
-      curType = 'all';
+      curFormat = 'all';
+      curCuisine = 'all';
       curPrice = 'all';
       curFeatures = [];
       cityFilts.forEach(function (x) {
@@ -643,61 +759,84 @@
         moreBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       });
 
-      extra.querySelectorAll('.tag[data-filter-type]').forEach(function (t) {
-        t.addEventListener('click', function () {
-          var val = (t.getAttribute('data-filter-type') || '').toLowerCase();
-          if (curType === val) {
-            curType = 'all';
-            t.classList.remove('active');
-            t.setAttribute('aria-pressed', 'false');
+      // Filter clicks using delegation so dynamically created tags work immediately
+      extra.addEventListener('click', function (e) {
+        var formatBtn = e.target.closest('.tag[data-filter-format], .tag[data-filter-type]');
+        if (formatBtn) {
+          var val = (formatBtn.getAttribute('data-filter-format') || formatBtn.getAttribute('data-filter-type') || '').toLowerCase();
+          if (curFormat === val) {
+            curFormat = 'all';
+            formatBtn.classList.remove('active');
+            formatBtn.setAttribute('aria-pressed', 'false');
           } else {
-            extra.querySelectorAll('.tag[data-filter-type]').forEach(function (x) {
+            extra.querySelectorAll('.tag[data-filter-format], .tag[data-filter-type]').forEach(function (x) {
               x.classList.remove('active');
               x.setAttribute('aria-pressed', 'false');
             });
-            curType = val;
-            t.classList.add('active');
-            t.setAttribute('aria-pressed', 'true');
+            curFormat = val;
+            formatBtn.classList.add('active');
+            formatBtn.setAttribute('aria-pressed', 'true');
           }
           applyVenues(true);
-        });
-      });
+          return;
+        }
 
-      extra.querySelectorAll('.tag[data-filter-price]').forEach(function (t) {
-        t.addEventListener('click', function () {
-          var val = t.getAttribute('data-filter-price');
+        var cuisineBtn = e.target.closest('.tag[data-filter-cuisine]');
+        if (cuisineBtn) {
+          var val = (cuisineBtn.getAttribute('data-filter-cuisine') || '').toLowerCase();
+          if (curCuisine === val) {
+            curCuisine = 'all';
+            cuisineBtn.classList.remove('active');
+            cuisineBtn.setAttribute('aria-pressed', 'false');
+          } else {
+            extra.querySelectorAll('.tag[data-filter-cuisine]').forEach(function (x) {
+              x.classList.remove('active');
+              x.setAttribute('aria-pressed', 'false');
+            });
+            curCuisine = val;
+            cuisineBtn.classList.add('active');
+            cuisineBtn.setAttribute('aria-pressed', 'true');
+          }
+          applyVenues(true);
+          return;
+        }
+
+        var priceBtn = e.target.closest('.tag[data-filter-price]');
+        if (priceBtn) {
+          var val = priceBtn.getAttribute('data-filter-price');
           if (curPrice === val) {
             curPrice = 'all';
-            t.classList.remove('active');
-            t.setAttribute('aria-pressed', 'false');
+            priceBtn.classList.remove('active');
+            priceBtn.setAttribute('aria-pressed', 'false');
           } else {
             extra.querySelectorAll('.tag[data-filter-price]').forEach(function (x) {
               x.classList.remove('active');
               x.setAttribute('aria-pressed', 'false');
             });
             curPrice = val;
-            t.classList.add('active');
-            t.setAttribute('aria-pressed', 'true');
+            priceBtn.classList.add('active');
+            priceBtn.setAttribute('aria-pressed', 'true');
           }
           applyVenues(true);
-        });
-      });
+          return;
+        }
 
-      extra.querySelectorAll('.tag[data-filter-feature]').forEach(function (t) {
-        t.addEventListener('click', function () {
-          var val = (t.getAttribute('data-filter-feature') || '').toLowerCase();
+        var featBtn = e.target.closest('.tag[data-filter-feature]');
+        if (featBtn) {
+          var val = (featBtn.getAttribute('data-filter-feature') || '').toLowerCase();
           var idx = curFeatures.indexOf(val);
           if (idx !== -1) {
             curFeatures.splice(idx, 1);
-            t.classList.remove('active');
-            t.setAttribute('aria-pressed', 'false');
+            featBtn.classList.remove('active');
+            featBtn.setAttribute('aria-pressed', 'false');
           } else {
             curFeatures.push(val);
-            t.classList.add('active');
-            t.setAttribute('aria-pressed', 'true');
+            featBtn.classList.add('active');
+            featBtn.setAttribute('aria-pressed', 'true');
           }
           applyVenues(true);
-        });
+          return;
+        }
       });
     }
 
@@ -711,17 +850,21 @@
       }
     }
     if (extra) {
-      if (curType !== 'all') {
-        var tBtn = extra.querySelector('.tag[data-filter-type="' + curType + '"]');
-        if (tBtn) { tBtn.classList.add('active'); tBtn.setAttribute('aria-pressed', 'true'); if (moreBtn && !extra.classList.contains('open')) moreBtn.click(); }
+      if (curFormat !== 'all') {
+        var fBtn = extra.querySelector('.tag[data-filter-format="' + curFormat + '"], .tag[data-filter-type="' + curFormat + '"]');
+        if (fBtn) { fBtn.classList.add('active'); fBtn.setAttribute('aria-pressed', 'true'); if (moreBtn && !extra.classList.contains('open')) moreBtn.click(); }
+      }
+      if (curCuisine !== 'all') {
+        var cuBtn = extra.querySelector('.tag[data-filter-cuisine="' + curCuisine + '"]');
+        if (cuBtn) { cuBtn.classList.add('active'); cuBtn.setAttribute('aria-pressed', 'true'); if (moreBtn && !extra.classList.contains('open')) moreBtn.click(); }
       }
       if (curPrice !== 'all') {
         var pBtn = extra.querySelector('.tag[data-filter-price="' + curPrice + '"]');
         if (pBtn) { pBtn.classList.add('active'); pBtn.setAttribute('aria-pressed', 'true'); if (moreBtn && !extra.classList.contains('open')) moreBtn.click(); }
       }
       curFeatures.forEach(function (f) {
-        var fBtn = extra.querySelector('.tag[data-filter-feature="' + f + '"]');
-        if (fBtn) { fBtn.classList.add('active'); fBtn.setAttribute('aria-pressed', 'true'); if (moreBtn && !extra.classList.contains('open')) moreBtn.click(); }
+        var ftBtn = extra.querySelector('.tag[data-filter-feature="' + f + '"]');
+        if (ftBtn) { ftBtn.classList.add('active'); ftBtn.setAttribute('aria-pressed', 'true'); if (moreBtn && !extra.classList.contains('open')) moreBtn.click(); }
       });
     }
     applyVenues(false);
@@ -740,9 +883,26 @@
 
     if (!dateFilts.length && !document.getElementById('eventsList') && !document.querySelector('.events-grid')) return;
 
+    // Read initial URL params if present and whitelist them
     var urlParams = new URLSearchParams(window.location.search);
-    var curCity = urlParams.get('city') || 'all';
-    var curWhen = urlParams.get('when') || 'all';
+    var rawCity = urlParams.get('city') || 'all';
+    var rawWhen = urlParams.get('when') || 'all';
+
+    // Whitelist valid filter values from DOM elements to prevent DOM XSS
+    var allowedWhen = ['all'];
+    dateFilts.forEach(function (btn) {
+      var w = btn.getAttribute('data-when');
+      if (w && allowedWhen.indexOf(w) === -1) allowedWhen.push(w);
+    });
+
+    var allowedCities = ['all'];
+    cityFilts.forEach(function (btn) {
+      var c = btn.getAttribute('data-city');
+      if (c && allowedCities.indexOf(c) === -1) allowedCities.push(c);
+    });
+
+    var curCity = (allowedCities.indexOf(rawCity) !== -1) ? rawCity : 'all';
+    var curWhen = (allowedWhen.indexOf(rawWhen) !== -1) ? rawWhen : 'all';
 
     function syncUrl() {
       var params = new URLSearchParams(window.location.search);
@@ -765,7 +925,7 @@
 
     function updateActiveChips() {
       if (!activeChips) return;
-      activeChips.innerHTML = '';
+      activeChips.textContent = '';
       var hasFilter = false;
 
       function addChip(label, onRemove) {
@@ -773,8 +933,20 @@
         var chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'active-filter-chip';
-        chip.innerHTML = label + ' <span class="chip-x" aria-hidden="true">✕</span>';
         chip.setAttribute('aria-label', 'Удалить фильтр ' + label);
+
+        var labelNode = document.createTextNode(label);
+        chip.appendChild(labelNode);
+
+        var spaceNode = document.createTextNode(' ');
+        chip.appendChild(spaceNode);
+
+        var xSpan = document.createElement('span');
+        xSpan.className = 'chip-x';
+        xSpan.setAttribute('aria-hidden', 'true');
+        xSpan.textContent = '✕';
+        chip.appendChild(xSpan);
+
         chip.addEventListener('click', onRemove);
         activeChips.appendChild(chip);
       }
@@ -1234,7 +1406,8 @@
         headers['X-WP-Nonce'] = window.qutermaSettings.nonce;
       }
 
-      var totalPages = 1;
+      var totalPages = 999;
+      var hasTotalPagesHeader = false;
       fetch(url.toString(), { headers: headers })
         .then(function (res) {
           if (!res.ok) {
@@ -1247,6 +1420,7 @@
             var tp = parseInt(totalPagesHeader, 10);
             if (!isNaN(tp) && tp >= 0) {
               totalPages = tp;
+              hasTotalPagesHeader = true;
               maxPage = tp;
               btn.setAttribute('data-max', maxPage);
             }

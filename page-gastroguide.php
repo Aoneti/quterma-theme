@@ -91,16 +91,36 @@ if ($venues_query->have_posts()) {
 
   <!-- РАСШИРЕННЫЕ ФИЛЬТРЫ -->
   <div class="filter-extra" id="extraFilters">
+    <!-- 1. ФОРМАТ ЗАВЕДЕНИЯ -->
     <div class="filter-extra-group">
-      <div class="filter-extra-label"><?php esc_html_e('Кухня / Формат', 'quterma'); ?></div>
-      <div class="filter-extra-opts">
-        <button type="button" class="tag" aria-pressed="false" data-filter-type="кофейня"><?php esc_html_e('Кофейня', 'quterma'); ?></button>
-        <button type="button" class="tag" aria-pressed="false" data-filter-type="ресторан"><?php esc_html_e('Ресторан', 'quterma'); ?></button>
-        <button type="button" class="tag" aria-pressed="false" data-filter-type="кафе"><?php esc_html_e('Кафе', 'quterma'); ?></button>
-        <button type="button" class="tag" aria-pressed="false" data-filter-type="пекарня"><?php esc_html_e('Пекарня', 'quterma'); ?></button>
-        <button type="button" class="tag" aria-pressed="false" data-filter-type="стрит-фуд"><?php esc_html_e('Стрит-фуд', 'quterma'); ?></button>
+      <div class="filter-extra-label"><?php esc_html_e('Формат', 'quterma'); ?></div>
+      <div class="filter-extra-opts" id="formatFilters">
+        <button type="button" class="tag" aria-pressed="false" data-filter-format="кофейня"><?php esc_html_e('Кофейня', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-format="ресторан"><?php esc_html_e('Ресторан', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-format="кафе"><?php esc_html_e('Кафе', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-format="пекарня"><?php esc_html_e('Пекарня', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-format="стрит-фуд"><?php esc_html_e('Стрит-фуд', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-format="бар"><?php esc_html_e('Бар / Паб', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-format="бистро"><?php esc_html_e('Бистро', 'quterma'); ?></button>
       </div>
     </div>
+
+    <!-- 2. КУХНЯ -->
+    <div class="filter-extra-group">
+      <div class="filter-extra-label"><?php esc_html_e('Кухня', 'quterma'); ?></div>
+      <div class="filter-extra-opts" id="cuisineFilters">
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="русская"><?php esc_html_e('Русская', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="итальянская"><?php esc_html_e('Итальянская', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="европейская"><?php esc_html_e('Европейская', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="грузинская"><?php esc_html_e('Грузинская', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="волжская"><?php esc_html_e('Волжская', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="азиатская"><?php esc_html_e('Азиатская', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="кавказская"><?php esc_html_e('Кавказская', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-cuisine="авторская"><?php esc_html_e('Авторская', 'quterma'); ?></button>
+      </div>
+    </div>
+
+    <!-- 3. ЦЕНА -->
     <div class="filter-extra-group">
       <div class="filter-extra-label"><?php esc_html_e('Цена', 'quterma'); ?></div>
       <div class="filter-extra-opts">
@@ -109,13 +129,22 @@ if ($venues_query->have_posts()) {
         <button type="button" class="tag" aria-pressed="false" data-filter-price="₽₽₽">₽₽₽</button>
       </div>
     </div>
+
+    <!-- 4. ОСОБЕННОСТИ (ПРЕДУСТАНОВКИ + ДИНАМИЧЕСКИЕ ИЗ МЕТА) -->
     <div class="filter-extra-group">
       <div class="filter-extra-label"><?php esc_html_e('Особенности', 'quterma'); ?></div>
-      <div class="filter-extra-opts">
+      <div class="filter-extra-opts" id="featuresFilters">
         <button type="button" class="tag" aria-pressed="false" data-filter-feature="веранда"><?php esc_html_e('Веранда', 'quterma'); ?></button>
         <button type="button" class="tag" aria-pressed="false" data-filter-feature="животными"><?php esc_html_e('С животными', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-feature="завтрак"><?php esc_html_e('Завтраки', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-feature="спешелти"><?php esc_html_e('Спешелти кофе', 'quterma'); ?></button>
         <button type="button" class="tag" aria-pressed="false" data-filter-feature="веган"><?php esc_html_e('Веган-меню', 'quterma'); ?></button>
         <button type="button" class="tag" aria-pressed="false" data-filter-feature="допоздна"><?php esc_html_e('Работает допоздна', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-feature="детск"><?php esc_html_e('Детская комната', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-feature="музык"><?php esc_html_e('Живая музыка', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-feature="волга"><?php esc_html_e('Вид на Волгу', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-feature="выпечк"><?php esc_html_e('Собственная выпечка', 'quterma'); ?></button>
+        <button type="button" class="tag" aria-pressed="false" data-filter-feature="парковк"><?php esc_html_e('Парковка', 'quterma'); ?></button>
       </div>
     </div>
   </div>

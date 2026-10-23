@@ -80,13 +80,47 @@ if (!function_exists('quterma_rest_track_view')) {
             }
         }
 
-        // Anti-repeat visit check (1 hour cookie window)
+        // Extract and validate client IP address
+        $client_ip = '';
+        if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            $client_ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP']));
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $forwarded = explode(',', sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])));
+            $client_ip = trim($forwarded[0]);
+        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            $client_ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
+        }
+        if (!filter_var($client_ip, FILTER_VALIDATE_IP)) {
+            $client_ip = 'unknown';
+        }
+
+        // 1. Server-side global rate limit per IP (max 60 requests per minute)
+        $ip_rate_key = 'qtr_rl_ip_' . md5($client_ip);
+        $ip_reqs = (int) get_transient($ip_rate_key);
+        if ($ip_reqs >= 60) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error'   => 'rate_limit_exceeded',
+                'message' => 'Too many requests'
+            ), 429);
+        }
+        set_transient($ip_rate_key, $ip_reqs + 1, 60);
+
+        // 2. Server-side rate limiting per publication & IP/session (1 hour window)
+        $user_ident = is_user_logged_in() ? get_current_user_id() : 'anon';
+        $post_view_key = 'qtr_pv_' . md5($client_ip . '|' . $user_ident . '_' . $post_id);
+
+        if (get_transient($post_view_key)) {
+            return new WP_REST_Response(array('success' => true, 'tracked' => false, 'reason' => 'rate_limited'), 200);
+        }
+
+        // 3. Auxiliary anti-repeat cookie mechanism
         $cookie_name = 'quterma_viewed_' . $post_id;
         if (isset($_COOKIE[$cookie_name])) {
+            set_transient($post_view_key, 1, 3600);
             return new WP_REST_Response(array('success' => true, 'tracked' => false, 'reason' => 'already_counted'), 200);
         }
 
-        // Set secure anti-repeat cookie
         if (!headers_sent()) {
             $cookie_path = COOKIEPATH ? COOKIEPATH : '/';
             $cookie_domain = COOKIE_DOMAIN ? COOKIE_DOMAIN : '';
@@ -100,16 +134,89 @@ if (!function_exists('quterma_rest_track_view')) {
             ));
         }
 
-        // 1. Increment total view counter
-        $total_views = (int) get_post_meta($post_id, QUTERMA_VIEWS_META_KEY, true);
-        $total_views++;
-        update_post_meta($post_id, QUTERMA_VIEWS_META_KEY, $total_views);
+        // Record server-side transient lock
+        set_transient($post_view_key, 1, 3600);
 
-        // 2. Increment daily view counter for accurate periods
-        $today_key = '_quterma_views_' . wp_date('Ymd');
+        // 4. Atomic SQL increment for total and daily views
+        global $wpdb;
+        $meta_key_total = QUTERMA_VIEWS_META_KEY;
+        $today_key      = '_quterma_views_' . wp_date('Ymd');
+
+        // Total views atomic update
+        $updated_total = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->postmeta} SET meta_value = CAST(meta_value AS UNSIGNED) + 1 WHERE post_id = %d AND meta_key = %s",
+                $post_id,
+                $meta_key_total
+            )
+        );
+        if (!$updated_total) {
+            $exists_total = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s LIMIT 1",
+                    $post_id,
+                    $meta_key_total
+                )
+            );
+            if (!$exists_total) {
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES (%d, %s, '1')",
+                        $post_id,
+                        $meta_key_total
+                    )
+                );
+            } else {
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "UPDATE {$wpdb->postmeta} SET meta_value = '1' WHERE post_id = %d AND meta_key = %s",
+                        $post_id,
+                        $meta_key_total
+                    )
+                );
+            }
+        }
+
+        // Daily views atomic update
+        $updated_today = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->postmeta} SET meta_value = CAST(meta_value AS UNSIGNED) + 1 WHERE post_id = %d AND meta_key = %s",
+                $post_id,
+                $today_key
+            )
+        );
+        if (!$updated_today) {
+            $exists_today = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s LIMIT 1",
+                    $post_id,
+                    $today_key
+                )
+            );
+            if (!$exists_today) {
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES (%d, %s, '1')",
+                        $post_id,
+                        $today_key
+                    )
+                );
+            } else {
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "UPDATE {$wpdb->postmeta} SET meta_value = '1' WHERE post_id = %d AND meta_key = %s",
+                        $post_id,
+                        $today_key
+                    )
+                );
+            }
+        }
+
+        // Invalidate WordPress postmeta object cache so subsequent get_post_meta reflects latest value
+        wp_cache_delete($post_id, 'post_meta');
+
+        $total_views = (int) get_post_meta($post_id, $meta_key_total, true);
         $daily_views = (int) get_post_meta($post_id, $today_key, true);
-        $daily_views++;
-        update_post_meta($post_id, $today_key, $daily_views);
 
         return new WP_REST_Response(array(
             'success'     => true,

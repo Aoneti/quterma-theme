@@ -72,6 +72,7 @@ if (!function_exists('quterma_output_seo_meta')) {
         }
 
         echo '<meta name="description" content="' . esc_attr($desc) . '">' . "\n";
+        echo '<meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1">' . "\n";
         echo '<meta property="og:site_name" content="' . esc_attr($site_name) . '">' . "\n";
         echo '<meta property="og:type" content="' . esc_attr($type) . '">' . "\n";
         echo '<meta property="og:title" content="' . esc_attr($title) . '">' . "\n";
@@ -168,9 +169,27 @@ if (!function_exists('quterma_output_schema_json_ld')) {
             $words_arr = preg_split('/\s+/u', $clean_body, -1, PREG_SPLIT_NO_EMPTY);
             $word_count = is_array($words_arr) ? count($words_arr) : 0;
 
+            // Check for LiveBlogPosting (tags or meta)
+            $is_liveblog = false;
+            if (get_post_meta($post->ID, '_is_liveblog', true) || get_post_meta($post->ID, '_quterma_liveblog', true)) {
+                $is_liveblog = true;
+            }
+            $post_tags = get_the_tags($post->ID);
+            if (!$is_liveblog && !empty($post_tags) && is_array($post_tags)) {
+                foreach ($post_tags as $pt) {
+                    $pt_lower = function_exists('mb_strtolower') ? mb_strtolower(trim($pt->name), 'UTF-8') : strtolower(trim($pt->name));
+                    if (in_array($pt_lower, array('live', 'онлайн', 'онлайн-трансляция', 'прямой эфир', 'прямой-эфир', 'хроника'))) {
+                        $is_liveblog = true;
+                        break;
+                    }
+                }
+            }
+
+            $schema_type = $is_liveblog ? 'LiveBlogPosting' : 'NewsArticle';
+
             $article_schema = array(
                 '@context'            => 'https://schema.org',
-                '@type'               => 'NewsArticle',
+                '@type'               => $schema_type,
                 'mainEntityOfPage'    => array(
                     '@type' => 'WebPage',
                     '@id'   => $permalink,
@@ -190,6 +209,20 @@ if (!function_exists('quterma_output_schema_json_ld')) {
                 ),
                 'publisher'           => $publisher,
             );
+
+            if ($is_liveblog) {
+                $article_schema['coverageStartTime'] = get_the_date('c', $post);
+                $article_schema['coverageEndTime']   = get_the_modified_date('c', $post);
+                $article_schema['liveBlogUpdate']    = array(
+                    array(
+                        '@type'         => 'BlogPosting',
+                        'headline'      => $headline,
+                        'datePublished' => get_the_modified_date('c', $post),
+                        'dateModified'  => get_the_modified_date('c', $post),
+                        'articleBody'   => $description,
+                    ),
+                );
+            }
 
             if ($word_count > 0) {
                 $article_schema['wordCount'] = $word_count;

@@ -149,6 +149,8 @@ if (!function_exists('quterma_register_venue_meta')) {
         $meta_fields = array(
             '_venue_city'     => 'string',
             '_venue_type'     => 'string',
+            '_venue_format'   => 'string',
+            '_venue_cuisine'  => 'string',
             '_venue_address'  => 'string',
             '_venue_price'    => 'string',
             '_venue_features' => 'string',
@@ -196,29 +198,41 @@ if (!function_exists('quterma_venue_render_meta_box')) {
     function quterma_venue_render_meta_box($post) {
         wp_nonce_field('quterma_venue_save_meta', 'quterma_venue_nonce');
 
-        $city        = get_post_meta($post->ID, '_venue_city', true);
+        $city = get_post_meta($post->ID, '_venue_city', true);
         if (empty($city)) {
             $city = 'yaroslavl';
         }
-        $type        = get_post_meta($post->ID, '_venue_type', true);
-        $address     = get_post_meta($post->ID, '_venue_address', true);
-        $price       = get_post_meta($post->ID, '_venue_price', true);
+        $format = get_post_meta($post->ID, '_venue_format', true);
+        if (empty($format)) {
+            $format = get_post_meta($post->ID, '_venue_type', true);
+        }
+        $cuisine = get_post_meta($post->ID, '_venue_cuisine', true);
+        $address = get_post_meta($post->ID, '_venue_address', true);
+        $price   = get_post_meta($post->ID, '_venue_price', true);
         if (empty($price)) {
             $price = '₽₽';
         }
-        $features    = get_post_meta($post->ID, '_venue_features', true);
-        $website     = get_post_meta($post->ID, '_venue_website', true);
-        $phone       = get_post_meta($post->ID, '_venue_phone', true);
-        $hours       = get_post_meta($post->ID, '_venue_hours', true);
+        $features = get_post_meta($post->ID, '_venue_features', true);
+        $website  = get_post_meta($post->ID, '_venue_website', true);
+        $phone    = get_post_meta($post->ID, '_venue_phone', true);
+        $hours    = get_post_meta($post->ID, '_venue_hours', true);
 
         $cities = quterma_get_cities();
 
         $features_lower = function_exists('quterma_strtolower') ? quterma_strtolower($features) : (function_exists('mb_strtolower') ? mb_strtolower($features, 'UTF-8') : strtolower($features));
         $pos_fn         = function_exists('quterma_strpos') ? 'quterma_strpos' : (function_exists('mb_strpos') ? 'mb_strpos' : 'strpos');
-        $has_veranda    = ($pos_fn($features_lower, 'веранда') !== false);
-        $has_pets       = ($pos_fn($features_lower, 'животн') !== false || $pos_fn($features_lower, 'pet') !== false);
-        $has_vegan      = ($pos_fn($features_lower, 'веган') !== false || $pos_fn($features_lower, 'vegan') !== false);
-        $has_late       = ($pos_fn($features_lower, 'допоздна') !== false || $pos_fn($features_lower, '24') !== false);
+        
+        $has_veranda   = ($pos_fn($features_lower, 'веранда') !== false || $pos_fn($features_lower, 'терраса') !== false);
+        $has_pets      = ($pos_fn($features_lower, 'животн') !== false || $pos_fn($features_lower, 'pet') !== false);
+        $has_breakfast = ($pos_fn($features_lower, 'завтрак') !== false);
+        $has_coffee    = ($pos_fn($features_lower, 'спешелти') !== false || $pos_fn($features_lower, 'specialty') !== false);
+        $has_vegan     = ($pos_fn($features_lower, 'веган') !== false || $pos_fn($features_lower, 'vegan') !== false);
+        $has_late      = ($pos_fn($features_lower, 'допоздна') !== false || $pos_fn($features_lower, '24') !== false);
+        $has_kids      = ($pos_fn($features_lower, 'детск') !== false);
+        $has_music     = ($pos_fn($features_lower, 'музык') !== false);
+        $has_view      = ($pos_fn($features_lower, 'волга') !== false || $pos_fn($features_lower, 'вид на') !== false);
+        $has_bakery    = ($pos_fn($features_lower, 'выпечк') !== false);
+        $has_parking   = ($pos_fn($features_lower, 'парковк') !== false);
 
         // Prepopulate only non-standard / custom feature tokens
         $custom_tokens = array();
@@ -231,10 +245,17 @@ if (!function_exists('quterma_venue_render_meta_box')) {
                 $p_lower = function_exists('quterma_strtolower') ? quterma_strtolower($p) : (function_exists('mb_strtolower') ? mb_strtolower($p, 'UTF-8') : strtolower($p));
                 $pos_fn  = function_exists('quterma_strpos') ? 'quterma_strpos' : (function_exists('mb_strpos') ? 'mb_strpos' : 'strpos');
                 if (
-                    $pos_fn($p_lower, 'веранда') !== false ||
+                    $pos_fn($p_lower, 'веранда') !== false || $pos_fn($p_lower, 'терраса') !== false ||
                     $pos_fn($p_lower, 'животн') !== false || $pos_fn($p_lower, 'pet') !== false ||
+                    $pos_fn($p_lower, 'завтрак') !== false ||
+                    $pos_fn($p_lower, 'спешелти') !== false || $pos_fn($p_lower, 'specialty') !== false ||
                     $pos_fn($p_lower, 'веган') !== false || $pos_fn($p_lower, 'vegan') !== false ||
-                    $pos_fn($p_lower, 'допоздна') !== false || $pos_fn($p_lower, '24') !== false
+                    $pos_fn($p_lower, 'допоздна') !== false || $pos_fn($p_lower, '24') !== false ||
+                    $pos_fn($p_lower, 'детск') !== false ||
+                    $pos_fn($p_lower, 'музык') !== false ||
+                    $pos_fn($p_lower, 'волга') !== false || $pos_fn($p_lower, 'вид на') !== false ||
+                    $pos_fn($p_lower, 'выпечк') !== false ||
+                    $pos_fn($p_lower, 'парковк') !== false
                 ) {
                     continue;
                 }
@@ -250,7 +271,7 @@ if (!function_exists('quterma_venue_render_meta_box')) {
           .qv-presets { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
           .qv-preset-btn { cursor: pointer; padding: 3px 9px; font-size: 11px; border: 1px solid #ccc; background: #f0f0f1; border-radius: 3px; }
           .qv-preset-btn:hover { background: #e0e0e0; }
-          .qv-features-grid { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 8px; }
+          .qv-features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px; }
           .qv-features-grid label { display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer; }
         </style>
 
@@ -267,16 +288,33 @@ if (!function_exists('quterma_venue_render_meta_box')) {
         </div>
 
         <div class="qv-row">
-            <label class="qv-label" for="venue_type"><?php esc_html_e('Формат / Кухня', 'quterma'); ?></label>
-            <input type="text" name="venue_type" id="venue_type" value="<?php echo esc_attr($type); ?>" placeholder="<?php esc_attr_e('Например: Кофейня, Ресторан, Пекарня, Стрит-фуд', 'quterma'); ?>" style="width:100%;max-width:400px;" />
+            <label class="qv-label" for="venue_format"><?php esc_html_e('Формат заведения', 'quterma'); ?></label>
+            <input type="text" name="venue_format" id="venue_format" value="<?php echo esc_attr($format); ?>" placeholder="<?php esc_attr_e('Например: Кофейня, Ресторан, Кафе, Пекарня, Стрит-фуд, Бар / Паб, Бистро', 'quterma'); ?>" style="width:100%;max-width:500px;" />
             <div class="qv-presets">
                 <span style="font-size:11px;color:#666;align-self:center"><?php esc_html_e('Быстрый выбор:', 'quterma'); ?></span>
-                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_type').value='Кофейня';">Кофейня</button>
-                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_type').value='Ресторан';">Ресторан</button>
-                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_type').value='Кафе';">Кафе</button>
-                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_type').value='Пекарня';">Пекарня</button>
-                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_type').value='Стрит-фуд';">Стрит-фуд</button>
-                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_type').value='Бар / Паб';">Бар / Паб</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_format').value='Кофейня';">Кофейня</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_format').value='Ресторан';">Ресторан</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_format').value='Кафе';">Кафе</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_format').value='Пекарня';">Пекарня</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_format').value='Стрит-фуд';">Стрит-фуд</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_format').value='Бар / Паб';">Бар / Паб</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_format').value='Бистро';">Бистро</button>
+            </div>
+        </div>
+
+        <div class="qv-row">
+            <label class="qv-label" for="venue_cuisine"><?php esc_html_e('Кухня', 'quterma'); ?></label>
+            <input type="text" name="venue_cuisine" id="venue_cuisine" value="<?php echo esc_attr($cuisine); ?>" placeholder="<?php esc_attr_e('Например: Русская, Итальянская, Европейская, Грузинская, Волжская, Азиатская, Кавказская, Авторская', 'quterma'); ?>" style="width:100%;max-width:500px;" />
+            <div class="qv-presets">
+                <span style="font-size:11px;color:#666;align-self:center"><?php esc_html_e('Быстрый выбор:', 'quterma'); ?></span>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Русская';">Русская</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Итальянская';">Итальянская</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Европейская';">Европейская</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Грузинская';">Грузинская</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Волжская';">Волжская</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Азиатская';">Азиатская</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Кавказская';">Кавказская</button>
+                <button type="button" class="qv-preset-btn" onclick="document.getElementById('venue_cuisine').value='Авторская';">Авторская</button>
             </div>
         </div>
 
@@ -304,6 +342,14 @@ if (!function_exists('quterma_venue_render_meta_box')) {
                     <?php esc_html_e('С животными (pet-friendly)', 'quterma'); ?>
                 </label>
                 <label>
+                    <input type="checkbox" name="qv_feat_breakfast" value="1" <?php checked($has_breakfast); ?>>
+                    <?php esc_html_e('Завтраки', 'quterma'); ?>
+                </label>
+                <label>
+                    <input type="checkbox" name="qv_feat_coffee" value="1" <?php checked($has_coffee); ?>>
+                    <?php esc_html_e('Спешелти кофе', 'quterma'); ?>
+                </label>
+                <label>
                     <input type="checkbox" name="qv_feat_vegan" value="1" <?php checked($has_vegan); ?>>
                     <?php esc_html_e('Веган-меню', 'quterma'); ?>
                 </label>
@@ -311,8 +357,29 @@ if (!function_exists('quterma_venue_render_meta_box')) {
                     <input type="checkbox" name="qv_feat_late" value="1" <?php checked($has_late); ?>>
                     <?php esc_html_e('Работает допоздна', 'quterma'); ?>
                 </label>
+                <label>
+                    <input type="checkbox" name="qv_feat_kids" value="1" <?php checked($has_kids); ?>>
+                    <?php esc_html_e('Детская комната', 'quterma'); ?>
+                </label>
+                <label>
+                    <input type="checkbox" name="qv_feat_music" value="1" <?php checked($has_music); ?>>
+                    <?php esc_html_e('Живая музыка', 'quterma'); ?>
+                </label>
+                <label>
+                    <input type="checkbox" name="qv_feat_view" value="1" <?php checked($has_view); ?>>
+                    <?php esc_html_e('Вид на Волгу', 'quterma'); ?>
+                </label>
+                <label>
+                    <input type="checkbox" name="qv_feat_bakery" value="1" <?php checked($has_bakery); ?>>
+                    <?php esc_html_e('Собственная выпечка', 'quterma'); ?>
+                </label>
+                <label>
+                    <input type="checkbox" name="qv_feat_parking" value="1" <?php checked($has_parking); ?>>
+                    <?php esc_html_e('Парковка', 'quterma'); ?>
+                </label>
             </div>
-            <input type="text" name="venue_features_custom" id="venue_features_custom" value="<?php echo esc_attr($custom_features_str); ?>" placeholder="<?php esc_attr_e('Дополнительные особенности через запятую (например: завтраки весь день, спешелти кофе)', 'quterma'); ?>" style="width:100%;max-width:600px;" />
+            <input type="text" name="venue_features_custom" id="venue_features_custom" value="<?php echo esc_attr($custom_features_str); ?>" placeholder="<?php esc_attr_e('Дополнительные особенности через запятую (например: настольные игры, бранчи по выходным)', 'quterma'); ?>" style="width:100%;max-width:600px;" />
+            <p class="description"><?php esc_html_e('Любые дополнительные особенности, введённые через запятую, автоматически появятся в фильтрах каталога на сайте.', 'quterma'); ?></p>
         </div>
 
         <div class="qv-row">
@@ -381,11 +448,25 @@ if (!function_exists('quterma_venue_save_meta')) {
             update_post_meta($post_id, '_venue_city', $city);
         }
 
-        // 2. Type
-        if (isset($_POST['venue_type'])) {
-            update_post_meta($post_id, '_venue_type', sanitize_text_field(wp_unslash($_POST['venue_type'])));
+        // 2. Format & Type
+        $format_val = '';
+        if (isset($_POST['venue_format'])) {
+            $format_val = sanitize_text_field(wp_unslash($_POST['venue_format']));
+        } elseif (isset($_POST['_venue_format'])) {
+            $format_val = sanitize_text_field(wp_unslash($_POST['_venue_format']));
+        } elseif (isset($_POST['venue_type'])) {
+            $format_val = sanitize_text_field(wp_unslash($_POST['venue_type']));
         } elseif (isset($_POST['_venue_type'])) {
-            update_post_meta($post_id, '_venue_type', sanitize_text_field(wp_unslash($_POST['_venue_type'])));
+            $format_val = sanitize_text_field(wp_unslash($_POST['_venue_type']));
+        }
+        update_post_meta($post_id, '_venue_format', $format_val);
+        update_post_meta($post_id, '_venue_type', $format_val);
+
+        // 2b. Cuisine
+        if (isset($_POST['venue_cuisine'])) {
+            update_post_meta($post_id, '_venue_cuisine', sanitize_text_field(wp_unslash($_POST['venue_cuisine'])));
+        } elseif (isset($_POST['_venue_cuisine'])) {
+            update_post_meta($post_id, '_venue_cuisine', sanitize_text_field(wp_unslash($_POST['_venue_cuisine'])));
         }
 
         // 3. Address
@@ -411,7 +492,7 @@ if (!function_exists('quterma_venue_save_meta')) {
             update_post_meta($post_id, '_venue_price', $price_val);
         }
 
-        // 5. Features (combine checkboxes and custom input; never re-add standard features through custom field)
+        // 5. Features (combine expanded checkboxes and custom input)
         $feat_tokens = array();
         if (!empty($_POST['qv_feat_veranda'])) {
             $feat_tokens[] = 'Веранда';
@@ -419,12 +500,34 @@ if (!function_exists('quterma_venue_save_meta')) {
         if (!empty($_POST['qv_feat_pets'])) {
             $feat_tokens[] = 'С животными';
         }
+        if (!empty($_POST['qv_feat_breakfast'])) {
+            $feat_tokens[] = 'Завтраки';
+        }
+        if (!empty($_POST['qv_feat_coffee'])) {
+            $feat_tokens[] = 'Спешелти кофе';
+        }
         if (!empty($_POST['qv_feat_vegan'])) {
             $feat_tokens[] = 'Веган-меню';
         }
         if (!empty($_POST['qv_feat_late'])) {
             $feat_tokens[] = 'Работает допоздна';
         }
+        if (!empty($_POST['qv_feat_kids'])) {
+            $feat_tokens[] = 'Детская комната';
+        }
+        if (!empty($_POST['qv_feat_music'])) {
+            $feat_tokens[] = 'Живая музыка';
+        }
+        if (!empty($_POST['qv_feat_view'])) {
+            $feat_tokens[] = 'Вид на Волгу';
+        }
+        if (!empty($_POST['qv_feat_bakery'])) {
+            $feat_tokens[] = 'Собственная выпечка';
+        }
+        if (!empty($_POST['qv_feat_parking'])) {
+            $feat_tokens[] = 'Парковка';
+        }
+
         if (isset($_POST['venue_features_custom'])) {
             $custom_parts = explode(',', sanitize_text_field(wp_unslash($_POST['venue_features_custom'])));
             foreach ($custom_parts as $cp) {
@@ -436,10 +539,17 @@ if (!function_exists('quterma_venue_save_meta')) {
                 $pos_fn   = function_exists('quterma_strpos') ? 'quterma_strpos' : (function_exists('mb_strpos') ? 'mb_strpos' : 'strpos');
                 // Guard against standard features typed into custom field when checkbox is unchecked
                 if (
-                    $pos_fn($cp_lower, 'веранда') !== false ||
+                    $pos_fn($cp_lower, 'веранда') !== false || $pos_fn($cp_lower, 'терраса') !== false ||
                     $pos_fn($cp_lower, 'животн') !== false || $pos_fn($cp_lower, 'pet') !== false ||
+                    $pos_fn($cp_lower, 'завтрак') !== false ||
+                    $pos_fn($cp_lower, 'спешелти') !== false || $pos_fn($cp_lower, 'specialty') !== false ||
                     $pos_fn($cp_lower, 'веган') !== false || $pos_fn($cp_lower, 'vegan') !== false ||
-                    $pos_fn($cp_lower, 'допоздна') !== false || $pos_fn($cp_lower, '24') !== false
+                    $pos_fn($cp_lower, 'допоздна') !== false || $pos_fn($cp_lower, '24') !== false ||
+                    $pos_fn($cp_lower, 'детск') !== false ||
+                    $pos_fn($cp_lower, 'музык') !== false ||
+                    $pos_fn($cp_lower, 'волга') !== false || $pos_fn($cp_lower, 'вид на') !== false ||
+                    $pos_fn($cp_lower, 'выпечк') !== false ||
+                    $pos_fn($cp_lower, 'парковк') !== false
                 ) {
                     continue;
                 }

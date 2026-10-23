@@ -66,26 +66,32 @@ while (have_posts()) : the_post();
     <div style="max-width:960px;margin-left:auto;margin-right:auto">
       <?php get_template_part('template-parts/breadcrumbs'); ?>
 
-      <div class="page-header" style="padding-bottom:18px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-          <?php if (!empty($type)) : ?>
-            <span class="venue-type-pill"><?php echo esc_html($type); ?></span>
-          <?php endif; ?>
-          <?php if (!empty($city_name)) : ?>
-            <span class="venue-city-pill"><?php echo esc_html($city_name); ?></span>
-          <?php endif; ?>
-          <?php if (!empty($price)) : ?>
-            <span class="venue-price-pill" title="<?php echo esc_attr($price_desc); ?>"><?php echo esc_html($price); ?></span>
-          <?php endif; ?>
-        </div>
+      <div class="page-header" style="padding-bottom:14px">
         <h1 class="page-title" style="margin-bottom:8px"><?php the_title(); ?></h1>
       </div>
 
-      <!-- ПРАКТИЧЕСКАЯ ИНФО-ПАНЕЛЬ ЗАВЕДЕНИЯ -->
+      <!-- 1. ФОТОГРАФИЯ ЗАВЕДЕНИЯ -->
+      <?php if (has_post_thumbnail()) : ?>
+        <figure class="article-wide venue-main-photo" style="margin:20px 0 28px;border-radius:10px;overflow:hidden">
+          <?php the_post_thumbnail('quterma-hero', array(
+              'loading'       => 'eager',
+              'fetchpriority' => 'high',
+              'sizes'         => '(max-width: 960px) 100vw, 960px',
+              'alt'           => the_title_attribute(array('echo' => false)),
+          )); ?>
+        </figure>
+      <?php endif; ?>
+
+      <!-- 2. РЕДАКТОРСКИЙ ОБЗОР И ОПИСАНИЕ ЗАВЕДЕНИЯ -->
+      <div class="article-col article-body rev" style="margin-bottom:36px;padding-bottom:12px">
+        <?php the_content(); ?>
+      </div>
+
+      <!-- 3. ПРАКТИЧЕСКАЯ ИНФО-ПАНЕЛЬ ЗАВЕДЕНИЯ (ПОД ФОТО И ОПИСАНИЕМ) -->
       <?php if (!empty($address) || !empty($hours) || !empty($price) || !empty($phone) || !empty($features_list)) : ?>
-      <div class="venue-practical-panel rev">
+      <div class="venue-practical-panel rev" style="margin-top:10px;margin-bottom:44px">
         <div class="venue-practical-grid">
-          <!-- 1. Адрес и Маршрут -->
+          <!-- 1. Адрес -->
           <?php if (!empty($address)) : ?>
           <div class="vp-item vp-address-item">
             <div class="vp-icon">
@@ -120,7 +126,7 @@ while (have_posts()) : the_post();
             <div>
               <div class="vp-label"><?php esc_html_e('Средний чек', 'quterma'); ?></div>
               <div class="vp-val">
-                <strong><?php echo esc_html($price); ?></strong>
+                <span class="vp-price-symbol"><?php echo esc_html($price); ?></span>
                 <?php if (!empty($price_desc)) : ?>
                   <span class="vp-subval">(<?php echo esc_html($price_desc); ?>)</span>
                 <?php endif; ?>
@@ -147,7 +153,7 @@ while (have_posts()) : the_post();
           <?php endif; ?>
         </div>
 
-        <!-- КНОПКИ ДЕЙСТВИЙ (ПОСТРОИТЬ МАРШРУТ, ПОЗВОНИТЬ, САЙТ) -->
+        <!-- КНОПКИ ДЕЙСТВИЙ (ПОСТРОИТЬ МАРШРУТ, САЙТ ЗАВЕДЕНИЯ) -->
         <div class="venue-actions-row">
           <?php if (!empty($address) || !empty($city_name)) : ?>
           <a href="<?php echo esc_url($route_url); ?>" target="_blank" rel="noopener noreferrer" class="venue-btn-primary">
@@ -156,53 +162,35 @@ while (have_posts()) : the_post();
           </a>
           <?php endif; ?>
 
-          <?php if (!empty($phone)) : ?>
-            <a href="tel:<?php echo esc_attr(preg_replace('/[^\d+]/', '', $phone)); ?>" class="venue-btn-secondary">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              <?php esc_html_e('Позвонить', 'quterma'); ?>
-            </a>
-          <?php endif; ?>
-
           <?php if (!empty($website)) : ?>
-            <a href="<?php echo esc_url($website); ?>" target="_blank" rel="noopener noreferrer" class="venue-btn-ghost">
+            <a href="<?php echo esc_url($website); ?>" target="_blank" rel="noopener noreferrer" class="venue-btn-secondary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               <?php esc_html_e('Сайт заведения', 'quterma'); ?>
             </a>
           <?php endif; ?>
         </div>
 
-        <?php if (!empty($features_list)) : ?>
+        <!-- ОСОБЕННОСТИ ЗАВЕДЕНИЯ (КЛИКАБЕЛЬНЫЕ) -->
+        <?php if (!empty($features_list)) : 
+            $gastro_base_url = function_exists('quterma_get_page_url') ? quterma_get_page_url('gastroguide', home_url('/gastroguide/')) : home_url('/gastroguide/');
+        ?>
           <div class="venue-panel-features">
             <span class="venue-pf-title"><?php esc_html_e('Особенности:', 'quterma'); ?></span>
             <div class="venue-chips-row">
-              <?php foreach ($features_list as $f) : ?>
-                <span class="venue-feat-chip"><?php echo esc_html(trim($f)); ?></span>
+              <?php foreach ($features_list as $f) : 
+                  $feat_clean = trim($f);
+                  if (empty($feat_clean)) continue;
+                  $feat_link = add_query_arg('features', rawurlencode($feat_clean), $gastro_base_url);
+              ?>
+                <a href="<?php echo esc_url($feat_link); ?>" class="venue-feat-chip venue-feat-link" title="<?php printf(esc_attr__('Все заведения с особенностью «%s»', 'quterma'), esc_html($feat_clean)); ?>">
+                  <?php echo esc_html($feat_clean); ?>
+                </a>
               <?php endforeach; ?>
             </div>
           </div>
         <?php endif; ?>
       </div>
       <?php endif; ?>
-    </div>
-  </div>
-
-  <!-- ВТОРОЙ СЛОЙ: ФОТОГРАФИИ И РЕДАКТОРСКИЙ ОБЗОР -->
-  <div class="wrap" style="padding-top:28px">
-    <div style="max-width:960px;margin-left:auto;margin-right:auto">
-      <?php if (has_post_thumbnail()) : ?>
-        <figure class="article-wide venue-main-photo" style="margin-bottom:32px;border-radius:10px;overflow:hidden">
-          <?php the_post_thumbnail('quterma-hero', array(
-              'loading'       => 'eager',
-              'fetchpriority' => 'high',
-              'sizes'         => '(max-width: 960px) 100vw, 960px',
-              'alt'           => the_title_attribute(array('echo' => false)),
-          )); ?>
-        </figure>
-      <?php endif; ?>
-
-      <div class="article-col article-body rev">
-        <?php the_content(); ?>
-      </div>
     </div>
   </div>
 </article>

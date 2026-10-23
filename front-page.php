@@ -44,7 +44,7 @@ if ($cinema_music_query->have_posts()) {
     $exclude_ids = array_merge($exclude_ids, wp_list_pluck($cinema_music_query->posts, 'ID'));
 }
 
-$iv_query = quterma_get_interview_posts(3, $exclude_ids);
+$iv_query = quterma_get_interview_posts(3, array());
 if ($iv_query->have_posts()) {
     $exclude_ids = array_merge($exclude_ids, wp_list_pluck($iv_query->posts, 'ID'));
 }
@@ -109,10 +109,20 @@ $feed_url         = quterma_get_news_url();
         ?>
       </div>
 
-      <?php if ($feed_query->max_num_pages > 1) : ?>
+      <?php
+      $has_more_feed = ($feed_query->max_num_pages > 1);
+      if (!$has_more_feed && function_exists('wp_count_posts')) {
+          $pub_posts = (int) wp_count_posts('post')->publish;
+          if ($pub_posts > $feed_count) {
+              $has_more_feed = true;
+          }
+      }
+      if ($has_more_feed) :
+          $max_pages_calc = max(2, (int) $feed_query->max_num_pages);
+      ?>
         <button type="button" class="load-more" id="loadMoreBtn" 
                 data-page="1" 
-                data-max="<?php echo esc_attr($feed_query->max_num_pages); ?>" 
+                data-max="<?php echo esc_attr($max_pages_calc); ?>" 
                 data-per-page="<?php echo esc_attr($feed_per_page); ?>"
                 data-exclude="<?php echo esc_attr(implode(',', $exclude_ids)); ?>"
                 data-url="<?php echo esc_url($feed_url); ?>">
@@ -221,86 +231,59 @@ $feed_url         = quterma_get_news_url();
       <?php
       while ($cinema_music_query->have_posts()) : $cinema_music_query->the_post();
           $post_id     = get_the_ID();
-          $cat_info    = quterma_get_post_category_info();
           $all_cats    = get_the_category($post_id);
           $post_tags   = get_the_tags($post_id);
-          $badge_name  = '';
-          $tag_label   = '';
+          $child_cat   = '';
           $is_music    = false;
 
-          // 1. Check child categories first
+          // 1. Identify child category of "Кино и музыка"
           if (!empty($all_cats)) {
-              // Find any child category (parent > 0) or specific category
               foreach ($all_cats as $c) {
                   $c_name = function_exists('mb_strtolower') ? mb_strtolower(trim($c->name), 'UTF-8') : strtolower(trim($c->name));
                   $c_slug = strtolower(trim(urldecode($c->slug)));
+                  $is_main = ($c_name === 'кино и музыка' || $c_slug === 'cinema-music' || $c_slug === 'kino-i-muzyka' || $c_name === 'новости' || $c_slug === 'news');
 
-                  if ($c->parent > 0 || (strpos($c_name, 'кино и музыка') === false && strpos($c_slug, 'cinema-music') === false && strpos($c_slug, 'kino-i-muzyka') === false)) {
-                      if (strpos($c_name, 'музык') !== false || strpos($c_slug, 'music') !== false || strpos($c_slug, 'muzyk') !== false) {
-                          $badge_name = __('Музыка', 'quterma');
-                          $is_music   = true;
-                          break;
-                      } elseif (strpos($c_name, 'кино') !== false || strpos($c_slug, 'cinema') !== false || strpos($c_slug, 'kino') !== false || strpos($c_name, 'фильм') !== false) {
-                          $badge_name = __('Кино', 'quterma');
-                          break;
-                      } else {
-                          // Child category like "Сериалы", "Концерты", "Релизы", etc.
-                          $badge_name = $c->name;
-                          if (strpos($c_name, 'концерт') !== false || strpos($c_name, 'плейлист') !== false || strpos($c_name, 'альбом') !== false) {
+                  if (!$is_main) {
+                      if ($c->parent > 0 || in_array($c_slug, array('kino', 'cinema', 'muzyka', 'music', 'kontserty', 'relizy', 'filmy', 'serialy', 'albomy'))) {
+                          $child_cat = $c->name;
+                          if (strpos($c_name, 'музык') !== false || strpos($c_slug, 'music') !== false || strpos($c_name, 'концерт') !== false || strpos($c_name, 'альбом') !== false) {
                               $is_music = true;
                           }
                           break;
+                      } elseif (empty($child_cat)) {
+                          $child_cat = $c->name;
                       }
                   }
               }
           }
 
-          // 2. Check tags if badge not determined by child category
-          if (empty($badge_name) && !empty($post_tags)) {
-              foreach ($post_tags as $t) {
-                  $t_name = function_exists('mb_strtolower') ? mb_strtolower(trim($t->name), 'UTF-8') : strtolower(trim($t->name));
-                  $t_slug = strtolower(trim(urldecode($t->slug)));
-
-                  if ($t_name === 'музыка' || strpos($t_name, 'музык') !== false || strpos($t_slug, 'music') !== false || strpos($t_slug, 'muzyk') !== false) {
-                      $badge_name = __('Музыка', 'quterma');
-                      $is_music   = true;
-                      break;
-                  } elseif ($t_name === 'кино' || strpos($t_name, 'кино') !== false || strpos($t_slug, 'cinema') !== false || strpos($t_slug, 'kino') !== false) {
-                      $badge_name = __('Кино', 'quterma');
-                      break;
+          // Fallback if no child category: post format or title heuristics
+          if (empty($child_cat)) {
+              $format = get_post_format($post_id);
+              if ($format === 'audio') {
+                  $child_cat = __('Музыка', 'quterma');
+                  $is_music  = true;
+              } elseif ($format === 'video') {
+                  $child_cat = __('Кино', 'quterma');
+              } else {
+                  $title_lower = function_exists('mb_strtolower') ? mb_strtolower(get_the_title(), 'UTF-8') : strtolower(get_the_title());
+                  if (preg_match('/(музык|трек|альбом|песн|плейлист|концерт|клип|звук|оркестр)/u', $title_lower)) {
+                      $child_cat = __('Музыка', 'quterma');
+                      $is_music  = true;
+                  } else {
+                      $child_cat = __('Кино', 'quterma');
                   }
               }
           }
 
-          // 3. Audio / Video post format check
-          if (empty($badge_name)) {
-              $format = get_post_format($post_id);
-              if ($format === 'audio') {
-                  $badge_name = __('Музыка', 'quterma');
-                  $is_music   = true;
-              } elseif ($format === 'video') {
-                  $badge_name = __('Кино', 'quterma');
-              }
-          }
-
-          // 4. Keyword heuristics from title/content if still unresolved
-          if (empty($badge_name)) {
-              $title_lower = function_exists('mb_strtolower') ? mb_strtolower(get_the_title(), 'UTF-8') : strtolower(get_the_title());
-              if (preg_match('/(музык|трек|альбом|песн|плейлист|концерт|клип|звук|оркестр)/u', $title_lower)) {
-                  $badge_name = __('Музыка', 'quterma');
-                  $is_music   = true;
-              } else {
-                  $badge_name = __('Кино', 'quterma');
-              }
-          }
-
-          // Pick the first editorial tag for the vinyl badge in top-right
+          // 2. Editorial sub-genre / style tag (must NOT repeat the section or child category name)
+          $genre_label = '';
           if (!empty($post_tags)) {
               foreach ($post_tags as $t) {
-                  $t_name_check = function_exists('mb_strtolower') ? mb_strtolower(trim($t->name), 'UTF-8') : strtolower(trim($t->name));
-                  $b_name_check = function_exists('mb_strtolower') ? mb_strtolower(trim($badge_name), 'UTF-8') : strtolower(trim($badge_name));
-                  if ($t_name_check !== 'кино' && $t_name_check !== 'музыка' && $t_name_check !== 'кино и музыка' && $t_name_check !== $b_name_check) {
-                      $tag_label = $t->name;
+                  $t_lower = function_exists('mb_strtolower') ? mb_strtolower(trim($t->name), 'UTF-8') : strtolower(trim($t->name));
+                  $c_lower = function_exists('mb_strtolower') ? mb_strtolower(trim($child_cat), 'UTF-8') : strtolower(trim($child_cat));
+                  if (!in_array($t_lower, array('кино', 'музыка', 'кино и музыка', 'новости', 'news', $c_lower))) {
+                      $genre_label = $t->name;
                       break;
                   }
               }
@@ -308,9 +291,8 @@ $feed_url         = quterma_get_news_url();
       ?>
         <a href="<?php the_permalink(); ?>" class="cm-card" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
           <div class="cm-media">
-            <div class="cm-badge"><?php echo esc_html($badge_name); ?></div>
-            <?php if (!empty($tag_label)) : ?>
-              <span class="cm-vinyl-tag"><?php echo esc_html($tag_label); ?></span>
+            <?php if (!empty($child_cat)) : ?>
+              <span class="cm-vinyl-tag"><?php echo esc_html($child_cat); ?></span>
             <?php endif; ?>
             <?php if (has_post_thumbnail()) : ?>
               <div style="aspect-ratio:16/10;overflow:hidden">
@@ -325,7 +307,9 @@ $feed_url         = quterma_get_news_url();
             <?php endif; ?>
           </div>
           <div class="cm-body">
-            <div class="cm-genre"><?php echo esc_html($cat_info['name']); ?></div>
+            <?php if (!empty($genre_label)) : ?>
+              <div class="cm-genre"><?php echo esc_html($genre_label); ?></div>
+            <?php endif; ?>
             <h3 class="cm-title"><?php the_title(); ?></h3>
             <p class="cm-desc"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 14, '…')); ?></p>
             <div class="cm-meta">

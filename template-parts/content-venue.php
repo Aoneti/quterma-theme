@@ -16,9 +16,18 @@ if (empty($city_slug)) {
 }
 $city_name = quterma_get_city_name($city_slug);
 $type      = get_post_meta($post_id, '_venue_type', true);
-if (empty($type)) {
-    $type = __('Заведение', 'quterma');
+$format    = get_post_meta($post_id, '_venue_format', true);
+if (empty($format)) {
+    $format = $type;
 }
+if (empty($type)) {
+    $type = $format;
+}
+if (empty($format)) {
+    $format = __('Заведение', 'quterma');
+    $type   = $format;
+}
+$cuisine   = get_post_meta($post_id, '_venue_cuisine', true);
 $address   = get_post_meta($post_id, '_venue_address', true);
 $price     = get_post_meta($post_id, '_venue_price', true);
 $features  = get_post_meta($post_id, '_venue_features', true);
@@ -41,12 +50,14 @@ if (empty($desc)) {
     $desc = wp_trim_words(get_the_content(), 15, '…');
 }
 
-$type_attr = function_exists('quterma_strtolower') ? quterma_strtolower($type) : (function_exists('mb_strtolower') ? mb_strtolower($type, 'UTF-8') : strtolower($type));
+$type_attr    = function_exists('quterma_strtolower') ? quterma_strtolower($type) : (function_exists('mb_strtolower') ? mb_strtolower($type, 'UTF-8') : strtolower($type));
+$format_attr  = function_exists('quterma_strtolower') ? quterma_strtolower($format) : (function_exists('mb_strtolower') ? mb_strtolower($format, 'UTF-8') : strtolower($format));
+$cuisine_attr = function_exists('quterma_strtolower') ? quterma_strtolower($cuisine) : (function_exists('mb_strtolower') ? mb_strtolower($cuisine, 'UTF-8') : strtolower($cuisine));
 ?>
-<a href="<?php the_permalink(); ?>" class="venue-card" data-city="<?php echo esc_attr($city_slug); ?>" data-type="<?php echo esc_attr($type_attr); ?>" data-price="<?php echo esc_attr($price); ?>" data-features="<?php echo esc_attr($features_str); ?>">
+<a href="<?php the_permalink(); ?>" class="venue-card" data-city="<?php echo esc_attr($city_slug); ?>" data-type="<?php echo esc_attr($type_attr); ?>" data-format="<?php echo esc_attr($format_attr); ?>" data-cuisine="<?php echo esc_attr($cuisine_attr); ?>" data-price="<?php echo esc_attr($price); ?>" data-features="<?php echo esc_attr($features_str); ?>">
   <div class="venue-img">
     <?php if (!empty($type)) : ?>
-      <span class="venue-type-badge"><?php echo esc_html($type); ?></span>
+      <span class="venue-type-badge"><?php echo esc_html($format); ?><?php if (!empty($cuisine)) : ?> · <?php echo esc_html($cuisine); ?><?php endif; ?></span>
     <?php endif; ?>
     <?php if (!empty($city_name)) : ?>
       <span class="venue-city-badge"><?php echo esc_html($city_name); ?></span>

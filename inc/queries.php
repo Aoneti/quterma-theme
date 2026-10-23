@@ -399,9 +399,13 @@ function quterma_get_interview_posts($limit = 3, $exclude_ids = array()) {
 
     if (!empty($args['tax_query'])) {
         $query = new WP_Query($args);
-        if (!$query->have_posts() && !empty($exclude_ids)) {
+        // If exclusions left us with fewer than $limit posts, re-query without exclusions to guarantee all interview items show
+        if ($query->post_count < $limit && !empty($exclude_ids)) {
             unset($args['post__not_in']);
-            $query = new WP_Query($args);
+            $unrestricted_query = new WP_Query($args);
+            if ($unrestricted_query->have_posts()) {
+                return $unrestricted_query;
+            }
         }
         if ($query->have_posts()) {
             return $query;
@@ -422,6 +426,13 @@ function quterma_get_interview_posts($limit = 3, $exclude_ids = array()) {
         $meta_args['post__not_in'] = array_map('intval', (array) $exclude_ids);
     }
     $query = new WP_Query($meta_args);
+    if ($query->post_count < $limit && !empty($exclude_ids)) {
+        unset($meta_args['post__not_in']);
+        $unrestricted_meta = new WP_Query($meta_args);
+        if ($unrestricted_meta->have_posts()) {
+            return $unrestricted_meta;
+        }
+    }
     if ($query->have_posts()) {
         return $query;
     }
