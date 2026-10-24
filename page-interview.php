@@ -112,7 +112,6 @@ $is_single_interview = is_singular('post') || (!empty($iv_person) && !empty($iv_
             ?>
               <a href="<?php the_permalink(); ?>" class="iv-card">
                 <div class="iv-media">
-                  <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
                   <?php if (has_post_thumbnail()) : ?>
                     <div style="aspect-ratio:1/1;overflow:hidden">
                       <?php the_post_thumbnail('quterma-card-4x3', array(
@@ -164,7 +163,6 @@ $is_single_interview = is_singular('post') || (!empty($iv_person) && !empty($iv_
             ?>
               <a href="<?php the_permalink(); ?>" class="iv-card">
                 <div class="iv-media">
-                  <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
                   <?php if (has_post_thumbnail()) : ?>
                     <div style="aspect-ratio:1/1;overflow:hidden">
                       <?php the_post_thumbnail('quterma-card-4x3', array(

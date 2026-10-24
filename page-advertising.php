@@ -77,26 +77,26 @@ while (have_posts()) : the_post();
     <h2 class="sec-div-title"><?php esc_html_e('Варианты размещения', 'quterma'); ?></h2>
     <div class="sec-div-line"></div>
   </div>
-  <div class="specials rev" style="margin-bottom:56px">
-    <div class="spec-card">
+  <div class="ad-options-grid rev" style="margin-bottom:56px">
+    <div class="ad-option-card">
       <div class="spec-acc"></div>
       <div class="spec-lbl"><?php esc_html_e('Нативный материал', 'quterma'); ?></div>
       <h3 class="spec-title"><?php esc_html_e('Публикация в ленте', 'quterma'); ?></h3>
       <p class="spec-desc"><?php esc_html_e('Полноценный материал о вашем деле или событии, в редакционном стиле Кутерьмы.', 'quterma'); ?></p>
     </div>
-    <div class="spec-card">
+    <div class="ad-option-card">
       <div class="spec-acc"></div>
       <div class="spec-lbl"><?php esc_html_e('Каталог', 'quterma'); ?></div>
       <h3 class="spec-title"><?php esc_html_e('Карточка в Гастрогиде', 'quterma'); ?></h3>
       <p class="spec-desc"><?php esc_html_e('Постоянное присутствие в каталоге заведений — с фото, описанием и расширенным профилем.', 'quterma'); ?></p>
     </div>
-    <div class="spec-card">
+    <div class="ad-option-card">
       <div class="spec-acc"></div>
       <div class="spec-lbl"><?php esc_html_e('Афиша', 'quterma'); ?></div>
       <h3 class="spec-title"><?php esc_html_e('Продвижение события', 'quterma'); ?></h3>
       <p class="spec-desc"><?php esc_html_e('Размещение вашего мероприятия в разделе «События» с приоритетным показом.', 'quterma'); ?></p>
     </div>
-    <div class="spec-card">
+    <div class="ad-option-card">
       <div class="spec-acc"></div>
       <div class="spec-lbl"><?php esc_html_e('Долгосрочно', 'quterma'); ?></div>
       <h3 class="spec-title"><?php esc_html_e('Партнёрство с рубрикой', 'quterma'); ?></h3>

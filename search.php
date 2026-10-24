@@ -29,7 +29,6 @@ $popular_rubrics = array(
 
 <div class="wrap">
   <div style="padding-top:28px">
-    <?php get_template_part('template-parts/breadcrumbs'); ?>
     <div class="page-header">
       <h1 class="page-title"><?php esc_html_e('Поиск', 'quterma'); ?></h1>
     </div>
@@ -43,20 +42,16 @@ $popular_rubrics = array(
     </form>
   </div>
 
-  <?php if (!empty($query_str)) : ?>
+  <?php if (!empty($query_str) && $total_results > 0) : ?>
     <div class="search-info">
       <?php
-      if ($total_results > 0) {
-          $word = quterma_plural($total_results, array('материал', 'материала', 'материалов'));
-          printf(
-              __('Найдено %1$d %2$s по запросу <strong>«%3$s»</strong>', 'quterma'),
-              $total_results,
-              $word,
-              esc_html($query_str)
-          );
-      } else {
-          printf(__('По запросу <strong>«%s»</strong> ничего не найдено', 'quterma'), esc_html($query_str));
-      }
+      $word = quterma_plural($total_results, array('материал', 'материала', 'материалов'));
+      printf(
+          __('Найдено %1$d %2$s по запросу <strong>«%3$s»</strong>', 'quterma'),
+          $total_results,
+          $word,
+          esc_html($query_str)
+      );
       ?>
     </div>
   <?php endif; ?>
@@ -130,7 +125,7 @@ $popular_rubrics = array(
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
           </div>
           <h3 style="font-size:18px;font-weight:700;color:var(--ink);margin:0"><?php esc_html_e('Ничего не найдено', 'quterma'); ?></h3>
-          <p class="empty-state-text"><?php esc_html_e('Попробуйте изменить формулировку, проверить опечатки или перейти в один из популярных разделов издания:', 'quterma'); ?></p>
+          <p class="empty-state-text"><?php esc_html_e('Ничего не нашлось. Попробуйте другой запрос или загляните в популярные рубрики:', 'quterma'); ?></p>
 
           <div class="search-suggest-chips" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0 18px;max-width:480px">
             <?php foreach ($popular_rubrics as $rub) : ?>

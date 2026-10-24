@@ -955,9 +955,142 @@ input[type="search"]::-webkit-search-results-decoration{display:none !important;
   }
 }
 
-/* ===== CINEMA & MUSIC SECTION (Кино и музыка) ===== */
-.cinema-section{background:linear-gradient(180deg,#181A15 0%,#12130F 100%);color:var(--always-cr);
-  padding:48px 0 54px;margin:44px 0;border-top:1px solid #2B2C24;border-bottom:1px solid #2B2C24}
+/* ===== CINEMA & MUSIC SECTION (Кино и музыка — киноплёнка, монтажная разметка и звуковая волна) ===== */
+.cinema-section{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background-color:#12130F;
+  background-image:
+    /* Монтажная разметка: тончайшая техническая сетка монтажного стола */
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255,255,255,.022) 1px, transparent 1px),
+    /* Базовый тёмный кинематографический градиент */
+    linear-gradient(180deg, #181A15 0%, #12130F 100%);
+  background-size:
+    44px 44px,
+    44px 44px,
+    100% 100%;
+  color:var(--always-cr);
+  padding:48px 0 54px;
+  margin:44px 0;
+  border-top:1px solid #2B2C24;
+  border-bottom:1px solid #2B2C24;
+}
+.cinema-section > .wrap{
+  position:relative;
+  z-index:1;
+}
+/* Разметка киноплёнки: абстрактная калибровка кадров, таймкод и оптическая звуковая дорожка */
+.cinema-section::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background-image:
+    /* Верхняя перфорационная разметка кадров (янтарный ритм) */
+    repeating-linear-gradient(90deg,
+      rgba(217,164,60,.16) 0px,
+      rgba(217,164,60,.16) 12px,
+      transparent 12px,
+      transparent 48px
+    ),
+    /* Метки долей секунды / таймкод */
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.038) 0px,
+      rgba(255,255,255,.038) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    /* Волосковая направляющая оптической дорожки */
+    linear-gradient(180deg,
+      transparent 0,
+      transparent 18px,
+      rgba(217,164,60,.12) 18px,
+      rgba(217,164,60,.12) 19px,
+      transparent 19px,
+      transparent 100%
+    );
+  background-size:
+    100% 6px,
+    100% 8px,
+    100% 100%;
+  background-position:
+    0 10px,
+    0 6px,
+    0 0;
+  background-repeat:
+    repeat-x,
+    repeat-x,
+    no-repeat;
+  opacity:.85;
+}
+/* Графика звуковой волны / аудиоспектрограмма в нижней части секции */
+.cinema-section::after{
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:58px;
+  pointer-events:none;
+  z-index:0;
+  background-image:
+    /* Тонкие полосы частотного спектра */
+    repeating-linear-gradient(90deg,
+      rgba(217,164,60,.22) 0px,
+      rgba(217,164,60,.22) 2px,
+      transparent 2px,
+      transparent 6px
+    ),
+    /* Спектральный градиент: тёплое золото у основания с плавным угасанием */
+    linear-gradient(0deg,
+      rgba(217,164,60,.18) 0%,
+      rgba(92,181,132,.08) 70%,
+      transparent 100%
+    );
+  /* Контур огибающей звуковой волны с неодинаковой высотой пиков */
+  clip-path:polygon(
+    0% 100%,
+    0% 82%,
+    3% 68%,
+    6% 85%,
+    9% 48%,
+    12% 74%,
+    15% 32%,
+    18% 60%,
+    21% 22%,
+    24% 54%,
+    27% 16%,
+    30% 66%,
+    33% 28%,
+    36% 78%,
+    39% 38%,
+    42% 62%,
+    45% 20%,
+    48% 70%,
+    51% 24%,
+    54% 84%,
+    57% 36%,
+    60% 68%,
+    63% 14%,
+    66% 56%,
+    69% 30%,
+    72% 76%,
+    75% 42%,
+    78% 64%,
+    81% 18%,
+    84% 50%,
+    87% 34%,
+    90% 74%,
+    93% 44%,
+    96% 86%,
+    100% 58%,
+    100% 100%
+  );
+  opacity:.75;
+}
 .cinema-section .sec-div-title{color:#FAF8F3}
 .cinema-section .sec-div-line{background:rgba(255,255,255,.14)}
 .cinema-section .sec-div-link{color:var(--accent-2)}
@@ -987,12 +1120,18 @@ input[type="search"]::-webkit-search-results-decoration{display:none !important;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cm-meta{font-size:12px;color:var(--dk-txt-1);margin-top:auto;display:flex;align-items:center;
   justify-content:space-between;border-top:1px solid rgba(255,255,255,.07);padding-top:10px}
+.cm-date{font-size:11.5px;color:var(--dk-txt-2)}
 .cm-meta-time{display:flex;align-items:center;gap:4px}
 .cm-meta-time svg{width:12px;height:12px;color:var(--dk-txt-2)}
 .cm-play-hint{display:flex;align-items:center;gap:4px;color:var(--accent-2);font-weight:600;
   font-family:var(--fd);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
 .cm-play-hint svg{width:10px;height:10px}
 @media(max-width:1024px){.cinema-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){
+  .cinema-section{padding:36px 0 42px;margin:32px 0}
+  .cinema-section::before{opacity:.6}
+  .cinema-section::after{height:36px;opacity:.6}
+}
 @media(max-width:600px){.cinema-grid{grid-template-columns:1fr}}
 
 /* ===== INTERVIEW SECTION (Интервью) ===== */
@@ -1118,8 +1257,80 @@ input[type="search"]::-webkit-search-results-decoration{display:none !important;
 .feed-empty-btn:hover{opacity:.85}
 .feed-empty-btn:active{transform:scale(.96)}
 
-/* ===== CULTURE LAYER ===== */
-.culture-section{background:var(--brand-pale);padding:46px 0;margin-top:8px}
+/* ===== CULTURE LAYER (Культурный слой — геологическая стратиграфия и топографические линии) ===== */
+.culture-section{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background-color:var(--brand-pale);
+  background-image:
+    /* Пласт 1: мягкий известняковый/песочный наклонный пласт */
+    linear-gradient(178.2deg, transparent 0%, transparent 22%, rgba(217,164,60,.048) 22.2%, rgba(217,164,60,.048) 36%, transparent 36.2%),
+    /* Пласт 2: тёплый глинистый/охристый слой с лёгким обратным наклоном */
+    linear-gradient(182deg, transparent 0%, transparent 45%, rgba(140,67,24,.038) 45.2%, rgba(184,115,68,.046) 59%, transparent 59.2%),
+    /* Пласт 3: приглушённый серо-коричневый слой камня */
+    linear-gradient(179.3deg, transparent 0%, transparent 69%, rgba(71,66,47,.042) 69.2%, rgba(140,128,116,.048) 84%, transparent 84.2%),
+    /* Тонкие осадочные микро-слои породы */
+    repeating-linear-gradient(180deg, transparent 0, transparent 38px, rgba(140,128,116,.022) 38px, rgba(140,128,116,.022) 39px),
+    /* Базовый градиент: сохраняет фирменный светлый фон с переходами известняка и минеральной породы */
+    linear-gradient(180deg, #EDF6F1 0%, #FAF6EE 34%, #F3EDE1 68%, #ECE4D4 100%);
+  padding:46px 0;
+  margin-top:8px;
+}
+.culture-section > .wrap{
+  position:relative;
+  z-index:1;
+}
+/* Топографические линии высот (контуры рельефа и изогипсы) */
+.culture-section::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background-image:
+    /* Топографический контур 1: холм в правом верхнем квадранте */
+    repeating-radial-gradient(ellipse 480px 260px at 92% 16%, transparent 0, transparent 28px, rgba(138,95,12,.045) 28px, rgba(138,95,12,.045) 29.5px, transparent 30px, transparent 56px),
+    /* Топографический контур 2: склон в левом нижнем квадранте */
+    repeating-radial-gradient(ellipse 520px 290px at 8% 86%, transparent 0, transparent 34px, rgba(46,107,78,.04) 34px, rgba(46,107,78,.04) 35.5px, transparent 36px, transparent 68px),
+    /* Топографический контур 3: широкие пологие горизонтали в нижней центральной части */
+    repeating-radial-gradient(ellipse 640px 320px at 50% 120%, transparent 0, transparent 42px, rgba(71,66,47,.035) 42px, rgba(71,66,47,.035) 43.5px, transparent 44px, transparent 84px);
+  opacity:.9;
+}
+/* Нижний геологический разрез (археологический срез породы с неровной границей) */
+.culture-section::after{
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:76px;
+  pointer-events:none;
+  z-index:0;
+  background:
+    linear-gradient(180deg, rgba(138,95,12,.05) 0%, transparent 14%),
+    linear-gradient(179deg,
+      rgba(217,164,60,.045) 0%,
+      rgba(217,164,60,.045) 28%,
+      rgba(140,67,24,.055) 28.5%,
+      rgba(140,67,24,.055) 60%,
+      rgba(71,66,47,.075) 60.5%,
+      rgba(71,66,47,.095) 100%
+    );
+  clip-path:polygon(
+    0 52%,
+    12% 42%,
+    26% 56%,
+    42% 38%,
+    58% 52%,
+    74% 34%,
+    88% 46%,
+    100% 36%,
+    100% 100%,
+    0 100%
+  );
+  opacity:.85;
+}
 .culture-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch}
 .cc-card{background:var(--paper);border-radius:8px;overflow:hidden;cursor:pointer;
   box-shadow:var(--sh-sm);transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;height:100%}
@@ -1140,6 +1351,8 @@ input[type="search"]::-webkit-search-results-decoration{display:none !important;
 @media(max-width:768px){
   .culture-grid{grid-template-columns:1fr}
   .culture-section{padding:34px 0}
+  .culture-section::before{opacity:.6}
+  .culture-section::after{height:48px;opacity:.7}
 }
 
 /* ===== SPECIALS (Журнальные спецпроекты и лонгриды) ===== */
@@ -1182,6 +1395,23 @@ input[type="search"]::-webkit-search-results-decoration{display:none !important;
   text-transform:uppercase;color:var(--accent);transition:opacity .15s}
 @media(max-width:1024px){.specials{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.specials{grid-template-columns:1fr}}
+
+/* ===== ADVERTISING OPTIONS CARDS ===== */
+.ad-options-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:56px}
+@media(max-width:1024px){.ad-options-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.ad-options-grid{grid-template-columns:1fr}}
+.ad-option-card{background:var(--paper);border:1px solid var(--bd);border-radius:8px;
+  box-shadow:0 2px 8px rgba(20,16,12,.05);padding:22px 20px 24px;cursor:default;
+  transition:transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s cubic-bezier(.16,1,.3,1),border-color .25s ease;
+  display:flex;flex-direction:column;position:relative;height:100%}
+.ad-option-card:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(20,16,12,.09);border-color:rgba(46,107,78,.3)}
+.ad-option-card .spec-acc{width:28px;height:3px;background:var(--brand);border-radius:2px;margin-bottom:14px;flex-shrink:0}
+.ad-option-card .spec-lbl{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.ad-option-card .spec-title{font-family:var(--fs);font-size:17px;font-weight:700;line-height:1.34;
+  color:var(--ink);margin-bottom:10px}
+.ad-option-card .spec-desc{font-size:13.5px;color:var(--ink-2);line-height:1.55;margin-bottom:0;flex:1;
+  display:block;overflow:visible;-webkit-line-clamp:unset;-webkit-box-orient:unset}
 
 /* ===== 404 ERROR PAGE ===== */
 .err-wrap{min-height:calc(100vh - 260px);display:flex;align-items:center;justify-content:center;padding:60px 22px}

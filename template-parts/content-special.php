@@ -94,7 +94,6 @@ if (empty($badge_text)) {
 ?>
 <article class="spec-card" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
   <div class="spec-media">
-    <div class="spec-badge"><?php echo esc_html($badge_text); ?></div>
     <?php if (has_post_thumbnail()) : ?>
       <div class="spec-img-wrap">
         <?php the_post_thumbnail('quterma-card-4x3', array(
@@ -112,8 +111,6 @@ if (empty($badge_text)) {
   <div class="spec-body">
     <div class="spec-meta-top">
       <span class="spec-cat"><?php echo esc_html($cat_info['name']); ?></span>
-      <span class="spec-dot">·</span>
-      <span class="spec-time"><?php echo esc_html($reading_time); ?></span>
     </div>
     <h3 class="spec-title">
       <a href="<?php the_permalink(); ?>" class="card-permalink"><?php the_title(); ?></a>

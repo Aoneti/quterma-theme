@@ -307,12 +307,10 @@ $feed_url         = quterma_get_news_url();
             <?php endif; ?>
           </div>
           <div class="cm-body">
-            <?php if (!empty($genre_label)) : ?>
-              <div class="cm-genre"><?php echo esc_html($genre_label); ?></div>
-            <?php endif; ?>
             <h3 class="cm-title"><?php the_title(); ?></h3>
             <p class="cm-desc"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 14, '…')); ?></p>
             <div class="cm-meta">
+              <span class="cm-date"><?php echo quterma_time_tag(get_the_ID(), false); ?></span>
               <span class="cm-play-hint"><?php echo $is_music ? esc_html__('Слушать', 'quterma') : esc_html__('Читать', 'quterma'); ?> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
             </div>
           </div>
@@ -339,7 +337,6 @@ if ($iv_query->have_posts()) :
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
     </div>
-
     <div class="interview-grid">
       <?php while ($iv_query->have_posts()) : $iv_query->the_post();
         $custom_person = get_post_meta(get_the_ID(), '_iv_person', true);
@@ -348,7 +345,6 @@ if ($iv_query->have_posts()) :
       ?>
         <a href="<?php the_permalink(); ?>" class="iv-card" data-id="<?php the_ID(); ?>" data-post-id="<?php the_ID(); ?>">
           <div class="iv-media">
-            <div class="iv-badge"><?php esc_html_e('Интервью', 'quterma'); ?></div>
             <?php if (has_post_thumbnail()) : ?>
               <div style="aspect-ratio:16/11;overflow:hidden">
                 <?php the_post_thumbnail('quterma-card-4x3', array(
